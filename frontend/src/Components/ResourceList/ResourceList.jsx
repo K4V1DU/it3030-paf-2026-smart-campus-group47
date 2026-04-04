@@ -47,29 +47,57 @@ const HOURS   = Array.from({ length: 12 }, (_, i) => i + 1);
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 const PERIODS = ["AM", "PM"];
 
-// ── Scroll Column ────────────────────────────────────────────────────
-function ScrollColumn({ items, selected, onSelect, fmt }) {
-  const ref    = useRef(null);
-  const timer  = useRef(null);
-  const selIdx = items.findIndex(i => i === selected);
+// ── Scroll Column (infinite loop, optional) ──────────────────────────
+const REPEATS = 5;
+
+function ScrollColumn({ items, selected, onSelect, fmt, loop = true }) {
+  const ref      = useRef(null);
+  const timer    = useRef(null);
+  const looped   = useMemo(
+    () => loop ? Array.from({ length: REPEATS }, () => items).flat() : items,
+    [items, loop]
+  );
+  const midStart = loop ? items.length * Math.floor(REPEATS / 2) : 0;
+  const selIdx   = items.findIndex(i => i === selected);
 
   useEffect(() => {
-    if (ref.current && selIdx >= 0) ref.current.scrollTop = selIdx * ITEM_H;
+    if (ref.current && selIdx >= 0) {
+      ref.current.scrollTop = (midStart + selIdx) * ITEM_H;
+    }
   }, []);
+
+  const snapToMiddle = () => {
+    if (!loop || !ref.current) return;
+    const el      = ref.current;
+    const rawIdx  = Math.round(el.scrollTop / ITEM_H);
+    const itemLen = items.length;
+    const edgePad = itemLen;
+    const total   = looped.length;
+    if (rawIdx < edgePad || rawIdx >= total - edgePad) {
+      const normalised = ((rawIdx % itemLen) + itemLen) % itemLen;
+      el.scrollTop = (midStart + normalised) * ITEM_H;
+    }
+  };
 
   const handleScroll = () => {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       if (!ref.current) return;
-      const idx     = Math.round(ref.current.scrollTop / ITEM_H);
-      const clamped = Math.max(0, Math.min(idx, items.length - 1));
-      if (items[clamped] !== selected) onSelect(items[clamped]);
+      snapToMiddle();
+      const rawIdx     = Math.round(ref.current.scrollTop / ITEM_H);
+      const normalised = loop
+        ? ((rawIdx % items.length) + items.length) % items.length
+        : Math.max(0, Math.min(rawIdx, items.length - 1));
+      if (items[normalised] !== selected) onSelect(items[normalised]);
     }, 80);
   };
 
-  const scrollTo = (idx) => {
-    ref.current.scrollTo({ top: idx * ITEM_H, behavior: "smooth" });
-    onSelect(items[idx]);
+  const scrollTo = (loopedIdx) => {
+    const normalised = loop
+      ? ((loopedIdx % items.length) + items.length) % items.length
+      : Math.max(0, Math.min(loopedIdx, items.length - 1));
+    ref.current.scrollTo({ top: loopedIdx * ITEM_H, behavior: "smooth" });
+    onSelect(items[normalised]);
   };
 
   return (
@@ -77,7 +105,7 @@ function ScrollColumn({ items, selected, onSelect, fmt }) {
       <div className={styles.tpHighlight} />
       <div ref={ref} className={styles.scrollCol} onScroll={handleScroll}>
         <div style={{ height: ITEM_H * 2, flexShrink: 0 }} />
-        {items.map((item, i) => (
+        {looped.map((item, i) => (
           <div
             key={i}
             className={`${styles.scrollItem} ${item === selected ? styles.scrollItemSel : ""}`}
@@ -152,7 +180,7 @@ function TimePickerPopup({ value, onSave, onClose, minTime, maxTime, minTimeOffs
           <ScrollColumn items={HOURS}   selected={selH} onSelect={setSelH} fmt={n => pad(n)} />
           <span className={styles.tpColon}>:</span>
           <ScrollColumn items={MINUTES} selected={selM} onSelect={setSelM} fmt={n => pad(n)} />
-          <ScrollColumn items={PERIODS} selected={selP} onSelect={setSelP} fmt={s => s} />
+          <ScrollColumn items={PERIODS} selected={selP} onSelect={setSelP} fmt={s => s} loop={false} />
         </div>
 
         {err && <p className={styles.tpErr}>{err}</p>}
