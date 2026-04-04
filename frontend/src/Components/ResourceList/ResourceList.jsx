@@ -2,19 +2,13 @@ import { useEffect, useState, useMemo } from "react";
 import styles from "./ResourceList.module.css";
 import Navbar from "../NavBar/Navbar";
 
-const TYPE_IMAGES = {
-  Equipment: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80",
-  Computer:  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&q=80",
-  Furniture: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80",
-  Accessory: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&q=80",
-  Lab:       "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&q=80",
-  default:   "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80",
-};
+const BASE_URL = "http://localhost:8080";
+
+const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80";
 
 const STATUS_META = {
-  Available:   { cls: "available",   dot: "#22c55e" },
-  "In Use":    { cls: "inuse",       dot: "#f59e0b" },
-  Maintenance: { cls: "maintenance", dot: "#ef4444" },
+  ACTIVE:          { cls: "available",   dot: "#22c55e" },
+  OUT_OF_SERVICE:  { cls: "maintenance", dot: "#ef4444" },
 };
 
 const SORT_OPTIONS = [
@@ -23,6 +17,12 @@ const SORT_OPTIONS = [
   { label: "Capacity ↑", value: "cap-asc"   },
   { label: "Capacity ↓", value: "cap-desc"  },
 ];
+
+// Returns the full image URL or a default placeholder
+function getImage(r) {
+  if (r.imageUrl) return `${BASE_URL}/${r.imageUrl}`;
+  return DEFAULT_IMAGE;
+}
 
 export default function ResourceList() {
   const [resources, setResources]       = useState([]);
@@ -35,7 +35,7 @@ export default function ResourceList() {
   const [view, setView]                 = useState("grid");
 
   useEffect(() => {
-    fetch("http://localhost:8080/Resource/getAllResource")
+    fetch(`${BASE_URL}/Resource/getAllResource`)
       .then(r => { if (!r.ok) throw new Error("Failed to fetch resources"); return r.json(); })
       .then(d => { setResources(d); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
@@ -159,12 +159,17 @@ export default function ResourceList() {
 }
 
 function GridCard({ r, styles }) {
-  const img   = TYPE_IMAGES[r.type] || TYPE_IMAGES.default;
-  const smeta = STATUS_META[r.status] || STATUS_META["Available"];
+  const img   = getImage(r);
+  const smeta = STATUS_META[r.status] || STATUS_META["ACTIVE"];
   return (
     <div className={styles.card}>
       <div className={styles.cardImg}>
-        <img src={img} alt={r.type} loading="lazy" />
+        <img
+          src={img}
+          alt={r.name}
+          loading="lazy"
+          onError={e => { e.target.src = DEFAULT_IMAGE; }}  // fallback if image fails to load
+        />
         <span className={`${styles.badge} ${styles[smeta.cls]}`}>
           <span className={styles.dot} style={{ background: smeta.dot }} />
           {r.status}
@@ -194,11 +199,17 @@ function GridCard({ r, styles }) {
 }
 
 function ListCard({ r, styles }) {
-  const img   = TYPE_IMAGES[r.type] || TYPE_IMAGES.default;
-  const smeta = STATUS_META[r.status] || STATUS_META["Available"];
+  const img   = getImage(r);
+  const smeta = STATUS_META[r.status] || STATUS_META["ACTIVE"];
   return (
     <div className={styles.listCard}>
-      <img src={img} alt={r.type} className={styles.listImg} loading="lazy" />
+      <img
+        src={img}
+        alt={r.name}
+        className={styles.listImg}
+        loading="lazy"
+        onError={e => { e.target.src = DEFAULT_IMAGE; }}  // fallback if image fails to load
+      />
       <div className={styles.listBody}>
         <div className={styles.listTop}>
           <h2 className={styles.cardName}>{r.name}</h2>
