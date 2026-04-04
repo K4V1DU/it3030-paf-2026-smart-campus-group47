@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import styles from "./ResourceList.module.css";
+import Navbar from "../NavBar/Navbar";
 
 const TYPE_IMAGES = {
   Equipment: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80",
@@ -32,7 +33,6 @@ export default function ResourceList() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [sort, setSort]                 = useState("name-asc");
   const [view, setView]                 = useState("grid");
-  const [menuOpen, setMenuOpen]         = useState(false);
 
   useEffect(() => {
     fetch("http://localhost:8080/Resource/getAllResource")
@@ -82,41 +82,7 @@ export default function ResourceList() {
     <div className={styles.page}>
 
       {/* ── Navbar ── */}
-      <nav className={styles.nav}>
-        <div className={styles.navInner}>
-          <div className={styles.navBrand}>
-            <div className={styles.navLogo}>SC</div>
-            <span className={styles.navBrandName}>SmartCampus</span>
-          </div>
-          <div className={styles.navLinks}>
-            <a href="#" className={`${styles.navLink} ${styles.navLinkActive}`}>Resources</a>
-            <a href="#" className={styles.navLink}>Bookings</a>
-            <a href="#" className={styles.navLink}>Schedule</a>
-            <a href="#" className={styles.navLink}>About</a>
-          </div>
-          <div className={styles.navActions}>
-            <button className={styles.loginBtn}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-              Login
-            </button>
-            <button className={styles.profileBtn} title="Profile">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </button>
-            <button className={styles.hamburger} onClick={() => setMenuOpen(o => !o)}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-            </button>
-          </div>
-        </div>
-        {menuOpen && (
-          <div className={styles.mobileMenu}>
-            <a href="#" className={styles.mobileLink}>Resources</a>
-            <a href="#" className={styles.mobileLink}>Bookings</a>
-            <a href="#" className={styles.mobileLink}>Schedule</a>
-            <a href="#" className={styles.mobileLink}>About</a>
-            <a href="#" className={styles.mobileLink}>Login</a>
-          </div>
-        )}
-      </nav>
+      <Navbar />
 
       {/* ── Hero ── */}
       <div className={styles.hero}>
@@ -137,7 +103,7 @@ export default function ResourceList() {
             {search && <button className={styles.heroSearchClear} onClick={() => setSearch("")}>✕</button>}
           </div>
 
-          {/* Filters + View Toggle in one row */}
+          {/* Filters + View Toggle */}
           <div className={styles.heroBottom}>
             <div className={styles.heroFilters}>
               <select className={styles.heroSelect} value={filterType} onChange={e => setFilterType(e.target.value)}>
