@@ -107,10 +107,10 @@ export default function ResourceList() {
           <div className={styles.heroBottom}>
             <div className={styles.heroFilters}>
               <select className={styles.heroSelect} value={filterType} onChange={e => setFilterType(e.target.value)}>
-                {types.map(t => <option key={t}>{t === "All" ? "All Types" : t}</option>)}
+                {types.map(t => <option key={t} value={t}>{t === "All" ? "All Types" : t}</option>)}
               </select>
               <select className={styles.heroSelect} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                {statuses.map(s => <option key={s}>{s === "All" ? "All Statuses" : s}</option>)}
+                {statuses.map(s => <option key={s} value={s}>{s === "All" ? "All Statuses" : s}</option>)}
               </select>
               <select className={styles.heroSelect} value={sort} onChange={e => setSort(e.target.value)}>
                 {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
