@@ -51,6 +51,15 @@ public class BookingService {
         return mapToDTOList(bookingRepo.findByUserId(userId));
     }
 
+    // ── GET BY RESOURCE ──────────────────────────────────────────────
+    public List<BookingDTO> getBookingsByResource(Long resourceId) {
+        if (!resourceRepo.existsById(resourceId)) {
+            throw new RuntimeException("Resource not found with id: " + resourceId);
+        }
+        return bookingRepo.findByResourceId(resourceId)
+                .stream().map(this::mapToDTO).toList();
+    }
+
     // ── GET BY STATUS (Admin filter) ─────────────────────────────────
     public List<BookingDTO> getBookingsByStatus(BookingStatus status) {
         return mapToDTOList(bookingRepo.findByStatus(status));

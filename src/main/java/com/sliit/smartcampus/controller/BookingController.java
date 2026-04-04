@@ -36,6 +36,13 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getBookingsByUser(userId));
     }
 
+    // GET BY RESOURCE
+    // e.g. GET /Booking/getBookingsByResource/5
+    @GetMapping("getBookingsByResource/{resourceId}")
+    public ResponseEntity<List<BookingDTO>> getBookingsByResource(@PathVariable Long resourceId) {
+        return ResponseEntity.ok(bookingService.getBookingsByResource(resourceId));
+    }
+
     // GET BY STATUS (Admin filter)
     // e.g. GET /Booking/getBookingsByStatus?status=PENDING
     @GetMapping("getBookingsByStatus")
