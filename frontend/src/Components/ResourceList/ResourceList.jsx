@@ -2,13 +2,14 @@ import { useEffect, useState, useMemo } from "react";
 import styles from "./ResourceList.module.css";
 import Navbar from "../NavBar/Navbar";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL   = "http://localhost:8080";
+const CURRENT_USER_ID = 1; // TODO: replace with auth user id later
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80";
 
 const STATUS_META = {
-  ACTIVE:          { cls: "available",   dot: "#22c55e" },
-  OUT_OF_SERVICE:  { cls: "maintenance", dot: "#ef4444" },
+  ACTIVE:         { cls: "available",   dot: "#22c55e" },
+  OUT_OF_SERVICE: { cls: "maintenance", dot: "#ef4444" },
 };
 
 const SORT_OPTIONS = [
@@ -18,11 +19,18 @@ const SORT_OPTIONS = [
   { label: "Capacity ↓", value: "cap-desc"  },
 ];
 
-// Returns the full image URL or a default placeholder
 function getImage(r) {
   if (r.imageUrl) return `${BASE_URL}/${r.imageUrl}`;
   return DEFAULT_IMAGE;
 }
+
+const EMPTY_FORM = {
+  bookingDate: "",
+  startTime:   "",
+  endTime:     "",
+  purpose:     "",
+  expectedAttendees: "",
+};
 
 export default function ResourceList() {
   const [resources, setResources]       = useState([]);
@@ -33,6 +41,12 @@ export default function ResourceList() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [sort, setSort]                 = useState("name-asc");
   const [view, setView]                 = useState("grid");
+
+  // ── Modal state ──────────────────────────────────────────────────
+  const [selected, setSelected]   = useState(null);   // resource being booked
+  const [form, setForm]           = useState(EMPTY_FORM);
+  const [submitting, setSubmitting] = useState(false);
+  const [bookingMsg, setBookingMsg] = useState(null);  // { type: "success"|"error", text }
 
   useEffect(() => {
     fetch(`${BASE_URL}/Resource/getAllResource`)
@@ -46,8 +60,8 @@ export default function ResourceList() {
 
   const filtered = useMemo(() => {
     let list = [...resources];
-    if (search)               list = list.filter(r => r.name?.toLowerCase().includes(search.toLowerCase()) || r.location?.toLowerCase().includes(search.toLowerCase()));
-    if (filterType !== "All") list = list.filter(r => r.type === filterType);
+    if (search)                 list = list.filter(r => r.name?.toLowerCase().includes(search.toLowerCase()) || r.location?.toLowerCase().includes(search.toLowerCase()));
+    if (filterType !== "All")   list = list.filter(r => r.type === filterType);
     if (filterStatus !== "All") list = list.filter(r => r.status === filterStatus);
     list.sort((a, b) => {
       if (sort === "name-asc")  return a.name?.localeCompare(b.name);
@@ -61,6 +75,65 @@ export default function ResourceList() {
 
   const clearFilters = () => { setSearch(""); setFilterType("All"); setFilterStatus("All"); };
   const hasFilters   = filterType !== "All" || filterStatus !== "All" || search;
+
+  // ── Open / Close modal ───────────────────────────────────────────
+  const openModal = (resource) => {
+    if (resource.status === "OUT_OF_SERVICE") return;
+    setSelected(resource);
+    setForm(EMPTY_FORM);
+    setBookingMsg(null);
+  };
+
+  const closeModal = () => {
+    setSelected(null);
+    setForm(EMPTY_FORM);
+    setBookingMsg(null);
+  };
+
+  // ── Form change ──────────────────────────────────────────────────
+  const handleChange = (e) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  // ── Submit booking ───────────────────────────────────────────────
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setBookingMsg(null);
+
+    const payload = {
+      userId:             CURRENT_USER_ID,
+      resourceId:         selected.id,
+      bookingDate:        form.bookingDate,
+      startTime:          form.startTime + ":00",
+      endTime:            form.endTime   + ":00",
+      purpose:            form.purpose,
+      expectedAttendees:  form.expectedAttendees ? parseInt(form.expectedAttendees) : null,
+    };
+
+    try {
+      const res = await fetch(`${BASE_URL}/Booking/addBooking`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Booking failed");
+      }
+
+      setBookingMsg({ type: "success", text: "Booking submitted successfully! Awaiting admin approval." });
+      setForm(EMPTY_FORM);
+    } catch (err) {
+      setBookingMsg({ type: "error", text: err.message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ── Today's date for min date picker ────────────────────────────
+  const today = new Date().toISOString().split("T")[0];
 
   if (loading) return (
     <div className={styles.state}>
@@ -80,8 +153,6 @@ export default function ResourceList() {
 
   return (
     <div className={styles.page}>
-
-      {/* ── Navbar ── */}
       <Navbar />
 
       {/* ── Hero ── */}
@@ -91,7 +162,6 @@ export default function ResourceList() {
           <h1 className={styles.heroTitle}>Find Campus Resources</h1>
           <p className={styles.heroSub}>Search and filter all available rooms, equipment and facilities.</p>
 
-          {/* Search */}
           <div className={styles.heroSearch}>
             <svg className={styles.heroSearchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input
@@ -103,7 +173,6 @@ export default function ResourceList() {
             {search && <button className={styles.heroSearchClear} onClick={() => setSearch("")}>✕</button>}
           </div>
 
-          {/* Filters + View Toggle */}
           <div className={styles.heroBottom}>
             <div className={styles.heroFilters}>
               <select className={styles.heroSelect} value={filterType} onChange={e => setFilterType(e.target.value)}>
@@ -115,12 +184,8 @@ export default function ResourceList() {
               <select className={styles.heroSelect} value={sort} onChange={e => setSort(e.target.value)}>
                 {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-              {hasFilters && (
-                <button className={styles.heroClear} onClick={clearFilters}>✕ Clear</button>
-              )}
+              {hasFilters && <button className={styles.heroClear} onClick={clearFilters}>✕ Clear</button>}
             </div>
-
-            {/* View Toggle */}
             <div className={styles.viewToggle}>
               <button className={`${styles.vBtn} ${view === "grid" ? styles.vActive : ""}`} onClick={() => setView("grid")} title="Grid view">
                 <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z"/></svg>
@@ -130,7 +195,6 @@ export default function ResourceList() {
               </button>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -145,31 +209,159 @@ export default function ResourceList() {
           </div>
         ) : view === "grid" ? (
           <div className={styles.grid}>
-            {filtered.map(r => <GridCard key={r.id} r={r} styles={styles} />)}
+            {filtered.map(r => (
+              <GridCard key={r.id} r={r} styles={styles} onBook={() => openModal(r)} />
+            ))}
           </div>
         ) : (
           <div className={styles.listView}>
-            {filtered.map(r => <ListCard key={r.id} r={r} styles={styles} />)}
+            {filtered.map(r => (
+              <ListCard key={r.id} r={r} styles={styles} onBook={() => openModal(r)} />
+            ))}
           </div>
         )}
       </div>
+
+      {/* ── Booking Modal ── */}
+      {selected && (
+        <div className={styles.overlay} onClick={(e) => e.target === e.currentTarget && closeModal()}>
+          <div className={styles.modal}>
+
+            {/* Modal header */}
+            <div className={styles.modalHeader}>
+              <div className={styles.modalHeaderLeft}>
+                <img
+                  src={getImage(selected)}
+                  alt={selected.name}
+                  className={styles.modalThumb}
+                  onError={e => { e.target.src = DEFAULT_IMAGE; }}
+                />
+                <div>
+                  <p className={styles.modalTypeBadge}>{selected.type}</p>
+                  <h2 className={styles.modalTitle}>{selected.name}</h2>
+                  <p className={styles.modalSub}>📍 {selected.location} &nbsp;·&nbsp; 👥 {selected.capacity} seats</p>
+                </div>
+              </div>
+              <button className={styles.modalClose} onClick={closeModal}>✕</button>
+            </div>
+
+            <div className={styles.modalDivider} />
+
+            {/* Success / Error message */}
+            {bookingMsg && (
+              <div className={`${styles.msgBox} ${styles[bookingMsg.type]}`}>
+                {bookingMsg.type === "success" ? "✅" : "⚠"} {bookingMsg.text}
+              </div>
+            )}
+
+            {/* Booking form */}
+            {!bookingMsg?.type || bookingMsg.type === "error" ? (
+              <form className={styles.form} onSubmit={handleSubmit}>
+
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Booking Date <span>*</span></label>
+                    <input
+                      className={styles.input}
+                      type="date"
+                      name="bookingDate"
+                      value={form.bookingDate}
+                      min={today}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Start Time <span>*</span></label>
+                    <input
+                      className={styles.input}
+                      type="time"
+                      name="startTime"
+                      value={form.startTime}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>End Time <span>*</span></label>
+                    <input
+                      className={styles.input}
+                      type="time"
+                      name="endTime"
+                      value={form.endTime}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Purpose <span>*</span></label>
+                  <textarea
+                    className={styles.textarea}
+                    name="purpose"
+                    placeholder="e.g. IT3030 Lecture, Group Study, Project Presentation…"
+                    value={form.purpose}
+                    onChange={handleChange}
+                    rows={3}
+                    required
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Expected Attendees</label>
+                  <input
+                    className={styles.input}
+                    type="number"
+                    name="expectedAttendees"
+                    placeholder={`Max ${selected.capacity}`}
+                    value={form.expectedAttendees}
+                    min={1}
+                    max={selected.capacity}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className={styles.availNote}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Available {selected.availableFrom || "—"} – {selected.availableTo || "—"}
+                </div>
+
+                <div className={styles.modalActions}>
+                  <button type="button" className={styles.cancelBtn} onClick={closeModal}>Cancel</button>
+                  <button type="submit" className={styles.submitBtn} disabled={submitting}>
+                    {submitting ? "Submitting…" : "Submit Booking"}
+                  </button>
+                </div>
+
+              </form>
+            ) : (
+              // After success — show close button
+              <div className={styles.modalActions}>
+                <button className={styles.submitBtn} onClick={closeModal}>Done</button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
 }
 
-function GridCard({ r, styles }) {
+// ── Grid Card ────────────────────────────────────────────────────────
+function GridCard({ r, styles, onBook }) {
   const img   = getImage(r);
   const smeta = STATUS_META[r.status] || STATUS_META["ACTIVE"];
+  const unavailable = r.status === "OUT_OF_SERVICE";
   return (
-    <div className={styles.card}>
+    <div className={`${styles.card} ${unavailable ? styles.cardDisabled : ""}`}>
       <div className={styles.cardImg}>
-        <img
-          src={img}
-          alt={r.name}
-          loading="lazy"
-          onError={e => { e.target.src = DEFAULT_IMAGE; }}  // fallback if image fails to load
-        />
+        <img src={img} alt={r.name} loading="lazy" onError={e => { e.target.src = DEFAULT_IMAGE; }} />
         <span className={`${styles.badge} ${styles[smeta.cls]}`}>
           <span className={styles.dot} style={{ background: smeta.dot }} />
           {r.status}
@@ -193,23 +385,26 @@ function GridCard({ r, styles }) {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           {r.availableFrom || "—"} – {r.availableTo || "—"}
         </div>
+        <button
+          className={`${styles.bookBtn} ${unavailable ? styles.bookBtnDisabled : ""}`}
+          onClick={onBook}
+          disabled={unavailable}
+        >
+          {unavailable ? "Unavailable" : "Book Now"}
+        </button>
       </div>
     </div>
   );
 }
 
-function ListCard({ r, styles }) {
+// ── List Card ────────────────────────────────────────────────────────
+function ListCard({ r, styles, onBook }) {
   const img   = getImage(r);
   const smeta = STATUS_META[r.status] || STATUS_META["ACTIVE"];
+  const unavailable = r.status === "OUT_OF_SERVICE";
   return (
     <div className={styles.listCard}>
-      <img
-        src={img}
-        alt={r.name}
-        className={styles.listImg}
-        loading="lazy"
-        onError={e => { e.target.src = DEFAULT_IMAGE; }}  // fallback if image fails to load
-      />
+      <img src={img} alt={r.name} className={styles.listImg} loading="lazy" onError={e => { e.target.src = DEFAULT_IMAGE; }} />
       <div className={styles.listBody}>
         <div className={styles.listTop}>
           <h2 className={styles.cardName}>{r.name}</h2>
@@ -235,6 +430,13 @@ function ListCard({ r, styles }) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             {r.availableFrom || "—"} – {r.availableTo || "—"}
           </span>
+          <button
+            className={`${styles.bookBtnSm} ${unavailable ? styles.bookBtnDisabled : ""}`}
+            onClick={onBook}
+            disabled={unavailable}
+          >
+            {unavailable ? "Unavailable" : "Book Now"}
+          </button>
         </div>
       </div>
     </div>
