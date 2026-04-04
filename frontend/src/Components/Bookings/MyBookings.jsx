@@ -1,18 +1,52 @@
 import { useEffect, useState, useMemo } from "react";
+import {
+  FiClock, FiCheckCircle, FiXCircle, FiSlash,
+  FiList, FiMapPin, FiCalendar, FiSearch, FiX,
+  FiAlertTriangle, FiHash, FiUser,
+} from "react-icons/fi";
 import styles from "./MyBookings.module.css";
 import Navbar from "../NavBar/Navbar";
 
 const BASE_URL        = "http://localhost:8080";
-const CURRENT_USER_ID = 1; // TODO: replace with auth user id later
+const CURRENT_USER_ID = 1;
 
 const STATUS_META = {
-  PENDING:   { label: "Pending",   cls: "pending",   icon: "🕐" },
-  APPROVED:  { label: "Approved",  cls: "approved",  icon: "✅" },
-  REJECTED:  { label: "Rejected",  cls: "rejected",  icon: "❌" },
-  CANCELLED: { label: "Cancelled", cls: "cancelled", icon: "🚫" },
+  PENDING:   { label: "Pending",   cls: "pending",   Icon: FiClock       },
+  APPROVED:  { label: "Approved",  cls: "approved",  Icon: FiCheckCircle },
+  REJECTED:  { label: "Rejected",  cls: "rejected",  Icon: FiXCircle     },
+  CANCELLED: { label: "Cancelled", cls: "cancelled", Icon: FiSlash       },
 };
 
-const FILTER_TABS = ["ALL", "PENDING", "APPROVED", "REJECTED", "CANCELLED"];
+const FILTER_TABS = [
+  { key: "ALL",       label: "Total",     Icon: FiList        },
+  { key: "PENDING",   label: "Pending",   Icon: FiClock       },
+  { key: "APPROVED",  label: "Approved",  Icon: FiCheckCircle },
+  { key: "REJECTED",  label: "Rejected",  Icon: FiXCircle     },
+  { key: "CANCELLED", label: "Cancelled", Icon: FiSlash       },
+];
+
+// Active-state accent colours per tab
+const TAB_ACTIVE_COLOR = {
+  ALL:       "rgba(255,255,255,0.18)",
+  PENDING:   "rgba(251,191,36,0.22)",
+  APPROVED:  "rgba(34,197,94,0.22)",
+  REJECTED:  "rgba(239,68,68,0.22)",
+  CANCELLED: "rgba(156,163,175,0.22)",
+};
+const TAB_ACTIVE_BORDER = {
+  ALL:       "rgba(255,255,255,0.7)",
+  PENDING:   "rgba(251,191,36,0.9)",
+  APPROVED:  "rgba(34,197,94,0.9)",
+  REJECTED:  "rgba(239,68,68,0.9)",
+  CANCELLED: "rgba(156,163,175,0.9)",
+};
+const TAB_ACTIVE_SHADOW = {
+  ALL:       "0 0 0 3px rgba(255,255,255,0.15), 0 6px 20px rgba(0,0,0,0.25)",
+  PENDING:   "0 0 0 3px rgba(251,191,36,0.2),   0 6px 20px rgba(0,0,0,0.25)",
+  APPROVED:  "0 0 0 3px rgba(34,197,94,0.2),    0 6px 20px rgba(0,0,0,0.25)",
+  REJECTED:  "0 0 0 3px rgba(239,68,68,0.2),    0 6px 20px rgba(0,0,0,0.25)",
+  CANCELLED: "0 0 0 3px rgba(156,163,175,0.2),  0 6px 20px rgba(0,0,0,0.25)",
+};
 
 export default function MyBookings() {
   const [bookings, setBookings]         = useState([]);
@@ -37,7 +71,7 @@ export default function MyBookings() {
 
   const counts = useMemo(() => {
     const c = { ALL: bookings.length };
-    FILTER_TABS.slice(1).forEach(s => { c[s] = bookings.filter(b => b.status === s).length; });
+    FILTER_TABS.slice(1).forEach(({ key }) => { c[key] = bookings.filter(b => b.status === key).length; });
     return c;
   }, [bookings]);
 
@@ -51,11 +85,9 @@ export default function MyBookings() {
     return list;
   }, [bookings, activeTab, search]);
 
-  // ── Modal handlers ────────────────────────────────────────────────
   const openCancel  = (booking) => { setCancelTarget(booking); setCancelReason(""); setCancelMsg(null); };
   const closeCancel = () => { setCancelTarget(null); setCancelReason(""); setCancelMsg(null); };
 
-  // ── Cancel (APPROVED → CANCELLED) ────────────────────────────────
   const submitCancel = async () => {
     setCancelling(true);
     try {
@@ -66,12 +98,9 @@ export default function MyBookings() {
       fetchBookings();
     } catch (e) {
       setCancelMsg({ type: "error", text: e.message });
-    } finally {
-      setCancelling(false);
-    }
+    } finally { setCancelling(false); }
   };
 
-  // ── Delete (PENDING → permanent delete) ──────────────────────────
   const submitDelete = async () => {
     setCancelling(true);
     try {
@@ -81,9 +110,7 @@ export default function MyBookings() {
       fetchBookings();
     } catch (e) {
       setCancelMsg({ type: "error", text: e.message });
-    } finally {
-      setCancelling(false);
-    }
+    } finally { setCancelling(false); }
   };
 
   if (loading) return (
@@ -100,7 +127,7 @@ export default function MyBookings() {
     <>
       <Navbar />
       <div className={styles.state}>
-        <div className={styles.errorBox}>⚠ {error}</div>
+        <div className={styles.errorBox}><FiAlertTriangle size={18} /> {error}</div>
       </div>
     </>
   );
@@ -113,17 +140,14 @@ export default function MyBookings() {
       <div className={styles.header}>
         <div className={styles.headerInner}>
 
-          {/* Left: text + search */}
+          {/* Left */}
           <div className={styles.headerText}>
             <span className={styles.eyebrow}>My Account</span>
             <h1 className={styles.title}>My Bookings</h1>
             <p className={styles.sub}>Track and manage all your resource booking requests.</p>
 
-            {/* Search */}
             <div className={styles.searchWrap}>
-              <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
+              <FiSearch className={styles.searchIcon} />
               <input
                 className={styles.searchInput}
                 placeholder="Search by resource or purpose…"
@@ -131,59 +155,35 @@ export default function MyBookings() {
                 onChange={e => setSearch(e.target.value)}
               />
               {search && (
-                <button className={styles.searchClear} onClick={() => setSearch("")}>✕</button>
+                <button className={styles.searchClear} onClick={() => setSearch("")}>
+                  <FiX size={14} />
+                </button>
               )}
             </div>
           </div>
 
-          {/* Right: stat cards that act as filter buttons */}
+          {/* Right: filter cards */}
           <div className={styles.summaryCards}>
-
-            {/* ALL */}
-            <button
-              className={`${styles.summaryCard} ${activeTab === "ALL" ? styles.summaryCardActive : ""}`}
-              onClick={() => setActiveTab("ALL")}
-            >
-              <span className={styles.summaryNum}>{counts.ALL}</span>
-              <span className={styles.summaryLabel}>Total</span>
-            </button>
-
-            {/* PENDING */}
-            <button
-              className={`${styles.summaryCard} ${styles.pendingCard} ${activeTab === "PENDING" ? styles.summaryCardActive : ""}`}
-              onClick={() => setActiveTab("PENDING")}
-            >
-              <span className={styles.summaryNum}>{counts.PENDING}</span>
-              <span className={styles.summaryLabel}>Pending</span>
-            </button>
-
-            {/* APPROVED */}
-            <button
-              className={`${styles.summaryCard} ${styles.approvedCard} ${activeTab === "APPROVED" ? styles.summaryCardActive : ""}`}
-              onClick={() => setActiveTab("APPROVED")}
-            >
-              <span className={styles.summaryNum}>{counts.APPROVED}</span>
-              <span className={styles.summaryLabel}>Approved</span>
-            </button>
-
-            {/* REJECTED */}
-            <button
-              className={`${styles.summaryCard} ${styles.rejectedCard} ${activeTab === "REJECTED" ? styles.summaryCardActive : ""}`}
-              onClick={() => setActiveTab("REJECTED")}
-            >
-              <span className={styles.summaryNum}>{counts.REJECTED}</span>
-              <span className={styles.summaryLabel}>Rejected</span>
-            </button>
-
-            {/* CANCELLED */}
-            <button
-              className={`${styles.summaryCard} ${styles.cancelledCard} ${activeTab === "CANCELLED" ? styles.summaryCardActive : ""}`}
-              onClick={() => setActiveTab("CANCELLED")}
-            >
-              <span className={styles.summaryNum}>{counts.CANCELLED}</span>
-              <span className={styles.summaryLabel}>Cancelled</span>
-            </button>
-
+            {FILTER_TABS.map(({ key, label, Icon }) => {
+              const isActive = activeTab === key;
+              return (
+                <button
+                  key={key}
+                  className={styles.summaryCard}
+                  style={isActive ? {
+                    background:   TAB_ACTIVE_COLOR[key],
+                    borderColor:  TAB_ACTIVE_BORDER[key],
+                    boxShadow:    TAB_ACTIVE_SHADOW[key],
+                    transform:    "translateY(-2px)",
+                  } : {}}
+                  onClick={() => setActiveTab(key)}
+                >
+                  <Icon size={18} className={styles.summaryIcon} />
+                  <span className={styles.summaryNum}>{counts[key]}</span>
+                  <span className={styles.summaryLabel}>{label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -192,7 +192,7 @@ export default function MyBookings() {
       <div className={styles.content}>
         {filtered.length === 0 ? (
           <div className={styles.empty}>
-            <div className={styles.emptyIcon}>📋</div>
+            <FiList size={48} className={styles.emptyIcon} />
             <h3>No bookings found</h3>
             <p>
               {search
@@ -210,12 +210,7 @@ export default function MyBookings() {
         ) : (
           <div className={styles.list}>
             {filtered.map(b => (
-              <BookingCard
-                key={b.id}
-                booking={b}
-                styles={styles}
-                onCancel={() => openCancel(b)}
-              />
+              <BookingCard key={b.id} booking={b} styles={styles} onCancel={() => openCancel(b)} />
             ))}
           </div>
         )}
@@ -229,25 +224,32 @@ export default function MyBookings() {
               <h3 className={styles.modalTitle}>
                 {cancelTarget.status === "PENDING" ? "Remove Booking" : "Cancel Booking"}
               </h3>
-              <button className={styles.modalClose} onClick={closeCancel}>✕</button>
+              <button className={styles.modalClose} onClick={closeCancel}>
+                <FiX size={14} />
+              </button>
             </div>
 
             <div className={styles.modalBody}>
               <div className={styles.cancelInfo}>
                 <p className={styles.cancelResource}>{cancelTarget.resourceName}</p>
                 <p className={styles.cancelMeta}>
-                  📅 {cancelTarget.bookingDate} &nbsp;·&nbsp;
-                  🕐 {cancelTarget.startTime} – {cancelTarget.endTime}
+                  <FiCalendar size={13} /> {cancelTarget.bookingDate}
+                  &nbsp;·&nbsp;
+                  <FiClock size={13} /> {cancelTarget.startTime} – {cancelTarget.endTime}
                 </p>
               </div>
 
               {cancelMsg ? (
                 <div className={`${styles.msgBox} ${styles[cancelMsg.type]}`}>
-                  {cancelMsg.type === "success" ? "✅" : "⚠"} {cancelMsg.text}
+                  {cancelMsg.type === "success"
+                    ? <FiCheckCircle size={15} />
+                    : <FiAlertTriangle size={15} />}
+                  {cancelMsg.text}
                 </div>
               ) : cancelTarget.status === "PENDING" ? (
                 <p className={styles.deleteWarning}>
-                  ⚠ This will permanently remove the booking request. This action cannot be undone.
+                  <FiAlertTriangle size={14} style={{ flexShrink: 0 }} />
+                  This will permanently remove the booking request. This action cannot be undone.
                 </p>
               ) : (
                 <>
@@ -291,22 +293,24 @@ export default function MyBookings() {
 // ── Booking Card ──────────────────────────────────────────────────────
 function BookingCard({ booking: b, styles, onCancel }) {
   const meta      = STATUS_META[b.status] || STATUS_META.PENDING;
+  const { Icon }  = meta;
   const canAction = b.status === "APPROVED" || b.status === "PENDING";
   const isPending = b.status === "PENDING";
 
   return (
     <div className={`${styles.card} ${styles["card_" + b.status?.toLowerCase()]}`}>
-
       <div className={`${styles.accent} ${styles["accent_" + b.status?.toLowerCase()]}`} />
 
       <div className={styles.cardInner}>
         <div className={styles.cardTop}>
           <div className={styles.resourceInfo}>
             <span className={styles.resourceName}>{b.resourceName}</span>
-            <span className={styles.resourceLoc}>📍 {b.resourceLocation || "—"}</span>
+            <span className={styles.resourceLoc}>
+              <FiMapPin size={12} /> {b.resourceLocation || "—"}
+            </span>
           </div>
           <span className={`${styles.statusBadge} ${styles[meta.cls]}`}>
-            {meta.icon} {meta.label}
+            <Icon size={13} /> {meta.label}
           </span>
         </div>
 
@@ -336,25 +340,25 @@ function BookingCard({ booking: b, styles, onCancel }) {
 
         {b.status === "REJECTED" && b.rejectionReason && (
           <div className={styles.reasonBox}>
-            <span className={styles.reasonLabel}>Rejection Reason:</span> {b.rejectionReason}
+            <FiXCircle size={13} /> <span className={styles.reasonLabel}>Rejection Reason:</span> {b.rejectionReason}
           </div>
         )}
 
         {b.status === "CANCELLED" && b.cancellationReason && (
           <div className={styles.cancelBox}>
-            <span className={styles.reasonLabel}>Cancellation Reason:</span> {b.cancellationReason}
+            <FiSlash size={13} /> <span className={styles.reasonLabel}>Cancellation Reason:</span> {b.cancellationReason}
           </div>
         )}
 
         {b.reviewedBy && (
           <div className={styles.reviewedRow}>
-            <span className={styles.detailLabel}>Reviewed by:</span>
+            <span className={styles.detailLabel}><FiUser size={12} /> Reviewed by:</span>
             <span className={styles.detailValue}>{b.reviewedBy}</span>
           </div>
         )}
 
         <div className={styles.cardFooter}>
-          <span className={styles.bookingId}>Booking #{b.id}</span>
+          <span className={styles.bookingId}><FiHash size={11} />{b.id}</span>
           {canAction && (
             <button
               className={`${styles.cancelBtn} ${isPending ? styles.removeBtn : ""}`}
