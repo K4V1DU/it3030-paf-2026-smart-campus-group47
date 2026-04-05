@@ -1,6 +1,7 @@
 package com.sliit.smartcampus.model;
 
 import com.sliit.smartcampus.model.enums.UserRole;
+import com.sliit.smartcampus.model.enums.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
