@@ -55,6 +55,14 @@ function fmt12(t) {
   return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")} ${p}`;
 }
 
+/** Returns true if the booking's end date+time is already in the past */
+function isEndTimePassed(bookingDate, endTime) {
+  if (!bookingDate || !endTime) return false;
+  const [y, mo, d] = bookingDate.split("-").map(Number);
+  const [h, m]     = endTime.split(":").map(Number);
+  return new Date() >= new Date(y, mo - 1, d, h, m, 0);
+}
+
 export default function MyBookings() {
   const [bookings, setBookings]         = useState([]);
   const [loading, setLoading]           = useState(true);
@@ -292,8 +300,14 @@ export default function MyBookings() {
 // ── Booking Card ──────────────────────────────────────────────────────
 function BookingCard({ booking: b, styles, onCancel }) {
   const meta      = STATUS_META[b.status] || STATUS_META.PENDING;
-  const canAction = b.status === "APPROVED" || b.status === "PENDING";
   const isPending = b.status === "PENDING";
+
+  // Approved bookings whose end time has passed cannot be cancelled
+  const endPassed = b.status === "APPROVED" && isEndTimePassed(b.bookingDate, b.endTime);
+
+  // Show the action button only for PENDING (remove) or APPROVED-but-not-ended (cancel)
+  const canAction = isPending || (b.status === "APPROVED" && !endPassed);
+
   const submittedDate = b.createdAt ? b.createdAt.split("T")[0] : null;
 
   return (
@@ -318,7 +332,7 @@ function BookingCard({ booking: b, styles, onCancel }) {
           </span>
         </div>
 
-        {/* ── Info strip: date / start / end / attendees ── */}
+        {/* ── Info strip ── */}
         <div className={styles.infoStrip}>
           <div className={styles.infoCell}>
             <span className={styles.infoLabel}>Date</span>
