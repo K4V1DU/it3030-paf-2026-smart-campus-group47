@@ -3,13 +3,13 @@ import {
   FiClock, FiCheckCircle, FiXCircle, FiSlash,
   FiList, FiMapPin, FiCalendar, FiSearch, FiX,
   FiAlertTriangle, FiHash, FiUser, FiUsers,
-  FiCheck, FiThumbsDown, FiFilter,
+  FiCheck, FiThumbsDown, FiFilter, FiAlertCircle,
 } from "react-icons/fi";
 import styles from "./BookingReviews.module.css";
 import Navbar from "../NavBar/Navbar";
 
 const BASE_URL    = "http://localhost:8080";
-const REVIEWED_BY = "admin@sliit.lk"; // TODO: replace with auth admin email
+const REVIEWED_BY = "admin@sliit.lk";
 
 const STATUS_META = {
   PENDING:   { label: "Pending",   cls: "pending",   Icon: FiClock       },
@@ -56,6 +56,30 @@ function fmt12(t) {
   return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")} ${p}`;
 }
 
+/**
+ * Returns one of:
+ *   "future"  — booking hasn't started yet (safe to approve normally)
+ *   "ongoing" — booking has started but not ended (currently in progress)
+ *   "past"    — booking end time has already passed
+ */
+function getBookingTimeStatus(bookingDate, startTime, endTime) {
+  if (!bookingDate || !startTime || !endTime) return "future";
+  const now = new Date();
+
+  const toDate = (dateStr, timeStr) => {
+    const [y, mo, d]  = dateStr.split("-").map(Number);
+    const [h, m]      = timeStr.split(":").map(Number);
+    return new Date(y, mo - 1, d, h, m, 0);
+  };
+
+  const start = toDate(bookingDate, startTime);
+  const end   = toDate(bookingDate, endTime);
+
+  if (now >= end)   return "past";
+  if (now >= start) return "ongoing";
+  return "future";
+}
+
 export default function BookingReviews() {
   const [bookings, setBookings]   = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -63,12 +87,16 @@ export default function BookingReviews() {
   const [activeTab, setActiveTab] = useState("PENDING");
   const [search, setSearch]       = useState("");
 
-  // Modal state — shared for approve & reject
-  const [modalTarget, setModalTarget]   = useState(null);  // booking object
-  const [modalMode, setModalMode]       = useState(null);  // "approve" | "reject"
-  const [rejectReason, setRejectReason] = useState("");
-  const [submitting, setSubmitting]     = useState(false);
-  const [resultMsg, setResultMsg]       = useState(null);
+  // Main approve/reject modal
+  const [modalTarget,   setModalTarget]   = useState(null);
+  const [modalMode,     setModalMode]     = useState(null); // "approve" | "reject"
+  const [rejectReason,  setRejectReason]  = useState("");
+  const [submitting,    setSubmitting]    = useState(false);
+  const [resultMsg,     setResultMsg]     = useState(null);
+
+  // Time-warning modal (shown before approve when slot is past/ongoing)
+  const [timeWarning,      setTimeWarning]      = useState(null); // null | "past" | "ongoing"
+  const [pendingApproval,  setPendingApproval]  = useState(null); // booking to approve after confirmation
 
   const fetchBookings = () => {
     setLoading(true);
@@ -96,7 +124,6 @@ export default function BookingReviews() {
       b.userName?.toLowerCase().includes(search.toLowerCase()) ||
       b.purpose?.toLowerCase().includes(search.toLowerCase())
     );
-    // Pending first, then by date
     list.sort((a, b) => {
       if (a.status === "PENDING" && b.status !== "PENDING") return -1;
       if (b.status === "PENDING" && a.status !== "PENDING") return 1;
@@ -105,21 +132,53 @@ export default function BookingReviews() {
     return list;
   }, [bookings, activeTab, search]);
 
-  // ── Modal helpers ──────────────────────────────────────────────────
+  // ── Modal helpers ─────────────────────────────────────────────────
   const openApprove = (booking) => {
-    setModalTarget(booking); setModalMode("approve");
-    setRejectReason(""); setResultMsg(null);
-  };
-  const openReject = (booking) => {
-    setModalTarget(booking); setModalMode("reject");
-    setRejectReason(""); setResultMsg(null);
-  };
-  const closeModal = () => {
-    setModalTarget(null); setModalMode(null);
-    setRejectReason(""); setResultMsg(null);
+    const timeStatus = getBookingTimeStatus(booking.bookingDate, booking.startTime, booking.endTime);
+
+    if (timeStatus === "past" || timeStatus === "ongoing") {
+      // Show warning first — don't open the main modal yet
+      setPendingApproval(booking);
+      setTimeWarning(timeStatus);
+    } else {
+      // Safe to open the normal approve modal directly
+      setModalTarget(booking);
+      setModalMode("approve");
+      setRejectReason("");
+      setResultMsg(null);
+    }
   };
 
-  // ── Approve ────────────────────────────────────────────────────────
+  const openReject = (booking) => {
+    setModalTarget(booking);
+    setModalMode("reject");
+    setRejectReason("");
+    setResultMsg(null);
+  };
+
+  const closeModal = () => {
+    setModalTarget(null);
+    setModalMode(null);
+    setRejectReason("");
+    setResultMsg(null);
+  };
+
+  // Called when admin clicks "Approve Anyway" in the warning popup
+  const confirmApproveAnyway = () => {
+    setTimeWarning(null);
+    setModalTarget(pendingApproval);
+    setModalMode("approve");
+    setRejectReason("");
+    setResultMsg(null);
+    setPendingApproval(null);
+  };
+
+  const dismissWarning = () => {
+    setTimeWarning(null);
+    setPendingApproval(null);
+  };
+
+  // ── Approve API call ──────────────────────────────────────────────
   const submitApprove = async () => {
     setSubmitting(true);
     try {
@@ -133,7 +192,7 @@ export default function BookingReviews() {
     } finally { setSubmitting(false); }
   };
 
-  // ── Reject ─────────────────────────────────────────────────────────
+  // ── Reject API call ───────────────────────────────────────────────
   const submitReject = async () => {
     if (!rejectReason.trim()) {
       setResultMsg({ type: "error", text: "A rejection reason is required." });
@@ -151,7 +210,7 @@ export default function BookingReviews() {
     } finally { setSubmitting(false); }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────
   if (loading) return (
     <>
       <Navbar />
@@ -179,7 +238,6 @@ export default function BookingReviews() {
       <div className={styles.header}>
         <div className={styles.headerInner}>
 
-          {/* Left */}
           <div className={styles.headerText}>
             <span className={styles.eyebrow}>Admin Panel</span>
             <h1 className={styles.title}>Booking Reviews</h1>
@@ -201,7 +259,6 @@ export default function BookingReviews() {
             </div>
           </div>
 
-          {/* Right: filter cards */}
           <div className={styles.summaryCards}>
             {FILTER_TABS.map(({ key, label, Icon }) => {
               const isActive = activeTab === key;
@@ -230,7 +287,6 @@ export default function BookingReviews() {
       {/* ── Content ── */}
       <div className={styles.content}>
 
-        {/* Active filter label */}
         {(activeTab !== "ALL" || search) && (
           <div className={styles.filterBar}>
             <FiFilter size={13} />
@@ -275,7 +331,78 @@ export default function BookingReviews() {
         )}
       </div>
 
-      {/* ── Approve / Reject Modal ── */}
+      {/* ══════════════════════════════════════════
+          TIME WARNING MODAL
+          Shown when the booking slot is already
+          past or currently ongoing
+      ══════════════════════════════════════════ */}
+      {timeWarning && pendingApproval && (
+        <div className={styles.overlay} onClick={e => e.target === e.currentTarget && dismissWarning()}>
+          <div className={`${styles.modal} ${styles.warningModal}`}>
+
+            {/* Icon + title */}
+            <div className={styles.warningTop}>
+              <div className={styles.warningIconWrap}>
+                <FiAlertCircle size={28} />
+              </div>
+              <h3 className={styles.warningTitle}>
+                {timeWarning === "past"
+                  ? "This booking slot has already passed"
+                  : "This booking is currently in progress"}
+              </h3>
+            </div>
+
+            {/* Detail strip */}
+            <div className={styles.warningInfo}>
+              <div className={styles.warningInfoRow}>
+                <span className={styles.warningInfoLabel}>Resource</span>
+                <span className={styles.warningInfoVal}>{pendingApproval.resourceName}</span>
+              </div>
+              <div className={styles.warningInfoRow}>
+                <span className={styles.warningInfoLabel}>Date</span>
+                <span className={styles.warningInfoVal}>{pendingApproval.bookingDate}</span>
+              </div>
+              <div className={styles.warningInfoRow}>
+                <span className={styles.warningInfoLabel}>Time slot</span>
+                <span className={styles.warningInfoVal}>
+                  {fmt12(pendingApproval.startTime)} – {fmt12(pendingApproval.endTime)}
+                </span>
+              </div>
+              <div className={styles.warningInfoRow}>
+                <span className={styles.warningInfoLabel}>Requested by</span>
+                <span className={styles.warningInfoVal}>{pendingApproval.userName}</span>
+              </div>
+            </div>
+
+            {/* Warning message */}
+            <div className={styles.warningMsg}>
+              <FiAlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>
+                {timeWarning === "past"
+                  ? "The scheduled time for this booking has fully elapsed. Approving it now will not grant any actual access to the resource."
+                  : "This booking's time slot is currently underway. The user may already be using or expecting access to the resource."}
+                {" "}Would you still like to approve it?
+              </span>
+            </div>
+
+            {/* Actions */}
+            <div className={styles.warningActions}>
+              <button className={styles.ghostBtn} onClick={dismissWarning}>
+                Cancel
+              </button>
+              <button className={styles.approveAnywayBtn} onClick={confirmApproveAnyway}>
+                <FiCheck size={14} />
+                {timeWarning === "past" ? "Approve Anyway" : "Approve (In Progress)"}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════
+          APPROVE / REJECT MODAL
+      ══════════════════════════════════════════ */}
       {modalTarget && (
         <div className={styles.overlay} onClick={e => e.target === e.currentTarget && closeModal()}>
           <div className={styles.modal}>
@@ -294,7 +421,6 @@ export default function BookingReviews() {
 
             <div className={styles.modalBody}>
 
-              {/* Booking summary */}
               <div className={styles.modalInfo}>
                 <div className={styles.modalInfoRow}>
                   <span className={styles.modalInfoLabel}>Resource</span>
@@ -307,7 +433,8 @@ export default function BookingReviews() {
                 <div className={styles.modalInfoRow}>
                   <span className={styles.modalInfoLabel}>Date &amp; time</span>
                   <span className={styles.modalInfoVal}>
-                    {modalTarget.bookingDate} &nbsp;·&nbsp; {fmt12(modalTarget.startTime)} – {fmt12(modalTarget.endTime)}
+                    {modalTarget.bookingDate}&nbsp;·&nbsp;
+                    {fmt12(modalTarget.startTime)} – {fmt12(modalTarget.endTime)}
                   </span>
                 </div>
                 <div className={styles.modalInfoRow}>
@@ -316,7 +443,6 @@ export default function BookingReviews() {
                 </div>
               </div>
 
-              {/* Result message */}
               {resultMsg && (
                 <div className={`${styles.msgBox} ${styles[resultMsg.type]}`}>
                   {resultMsg.type === "success" ? <FiCheckCircle size={15} /> : <FiAlertTriangle size={15} />}
@@ -324,7 +450,6 @@ export default function BookingReviews() {
                 </div>
               )}
 
-              {/* Reject reason textarea */}
               {!resultMsg && modalMode === "reject" && (
                 <>
                   <label className={styles.label}>
@@ -341,7 +466,6 @@ export default function BookingReviews() {
                 </>
               )}
 
-              {/* Approve confirmation text */}
               {!resultMsg && modalMode === "approve" && (
                 <p className={styles.approveNote}>
                   <FiCheckCircle size={14} style={{ flexShrink: 0 }} />
@@ -368,6 +492,7 @@ export default function BookingReviews() {
                 </>
               )}
             </div>
+
           </div>
         </div>
       )}
@@ -381,6 +506,11 @@ function ReviewCard({ booking: b, styles, onApprove, onReject }) {
   const isPending = b.status === "PENDING";
   const submittedDate = b.createdAt ? b.createdAt.split("T")[0] : null;
 
+  // Show a subtle "time passed" tag on pending cards whose slot has elapsed
+  const timeStatus = isPending
+    ? getBookingTimeStatus(b.bookingDate, b.startTime, b.endTime)
+    : "future";
+
   return (
     <div className={`${styles.card} ${styles["card_" + b.status?.toLowerCase()]}`}>
       <div className={`${styles.accent} ${styles["accent_" + b.status?.toLowerCase()]}`} />
@@ -391,14 +521,26 @@ function ReviewCard({ booking: b, styles, onApprove, onReject }) {
         <div className={styles.cardTop}>
           <div className={styles.topLeft}>
             <div className={styles.nameBlock}>
-              <span className={styles.resourceName}>{b.resourceName}</span>
+              <div className={styles.nameLine}>
+                <span className={styles.resourceName}>{b.resourceName}</span>
+                {/* Past / ongoing tag */}
+                {timeStatus === "past" && (
+                  <span className={styles.timePassedTag}>
+                    <FiAlertCircle size={11} /> Time Passed
+                  </span>
+                )}
+                {timeStatus === "ongoing" && (
+                  <span className={styles.timeOngoingTag}>
+                    <FiClock size={11} /> In Progress
+                  </span>
+                )}
+              </div>
               {b.resourceLocation && (
                 <span className={styles.resourceLoc}>
                   <FiMapPin size={11} /> {b.resourceLocation}
                 </span>
               )}
             </div>
-            {/* Requester chip */}
             <div className={styles.requesterChip}>
               <FiUser size={12} />
               <span className={styles.requesterName}>{b.userName}</span>
