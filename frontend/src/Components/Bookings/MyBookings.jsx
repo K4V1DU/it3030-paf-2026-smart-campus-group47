@@ -25,7 +25,6 @@ const FILTER_TABS = [
   { key: "CANCELLED", label: "Cancelled", Icon: FiSlash       },
 ];
 
-// Active-state accent colours per tab
 const TAB_ACTIVE_COLOR = {
   ALL:       "rgba(255,255,255,0.18)",
   PENDING:   "rgba(251,191,36,0.22)",
@@ -47,6 +46,14 @@ const TAB_ACTIVE_SHADOW = {
   REJECTED:  "0 0 0 3px rgba(239,68,68,0.2),    0 6px 20px rgba(0,0,0,0.25)",
   CANCELLED: "0 0 0 3px rgba(156,163,175,0.2),  0 6px 20px rgba(0,0,0,0.25)",
 };
+
+function fmt12(t) {
+  if (!t) return "—";
+  const [hh, mm] = t.split(":").map(Number);
+  const p = hh < 12 ? "AM" : "PM";
+  const h = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
+  return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")} ${p}`;
+}
 
 export default function MyBookings() {
   const [bookings, setBookings]         = useState([]);
@@ -139,13 +146,10 @@ export default function MyBookings() {
       {/* ── Header ── */}
       <div className={styles.header}>
         <div className={styles.headerInner}>
-
-          {/* Left */}
           <div className={styles.headerText}>
-            <span className={styles.eyebrow}>My Account</span>
+            <span className={styles.eyebrow}>SLIIT Smart Campus</span>
             <h1 className={styles.title}>My Bookings</h1>
             <p className={styles.sub}>Track and manage all your resource booking requests.</p>
-
             <div className={styles.searchWrap}>
               <FiSearch className={styles.searchIcon} />
               <input
@@ -162,7 +166,6 @@ export default function MyBookings() {
             </div>
           </div>
 
-          {/* Right: filter cards */}
           <div className={styles.summaryCards}>
             {FILTER_TABS.map(({ key, label, Icon }) => {
               const isActive = activeTab === key;
@@ -171,10 +174,10 @@ export default function MyBookings() {
                   key={key}
                   className={styles.summaryCard}
                   style={isActive ? {
-                    background:   TAB_ACTIVE_COLOR[key],
-                    borderColor:  TAB_ACTIVE_BORDER[key],
-                    boxShadow:    TAB_ACTIVE_SHADOW[key],
-                    transform:    "translateY(-2px)",
+                    background:  TAB_ACTIVE_COLOR[key],
+                    borderColor: TAB_ACTIVE_BORDER[key],
+                    boxShadow:   TAB_ACTIVE_SHADOW[key],
+                    transform:   "translateY(-2px)",
                   } : {}}
                   onClick={() => setActiveTab(key)}
                 >
@@ -224,9 +227,7 @@ export default function MyBookings() {
               <h3 className={styles.modalTitle}>
                 {cancelTarget.status === "PENDING" ? "Remove Booking" : "Cancel Booking"}
               </h3>
-              <button className={styles.modalClose} onClick={closeCancel}>
-                <FiX size={14} />
-              </button>
+              <button className={styles.modalClose} onClick={closeCancel}><FiX size={14} /></button>
             </div>
 
             <div className={styles.modalBody}>
@@ -235,15 +236,13 @@ export default function MyBookings() {
                 <p className={styles.cancelMeta}>
                   <FiCalendar size={13} /> {cancelTarget.bookingDate}
                   &nbsp;·&nbsp;
-                  <FiClock size={13} /> {cancelTarget.startTime} – {cancelTarget.endTime}
+                  <FiClock size={13} /> {fmt12(cancelTarget.startTime)} – {fmt12(cancelTarget.endTime)}
                 </p>
               </div>
 
               {cancelMsg ? (
                 <div className={`${styles.msgBox} ${styles[cancelMsg.type]}`}>
-                  {cancelMsg.type === "success"
-                    ? <FiCheckCircle size={15} />
-                    : <FiAlertTriangle size={15} />}
+                  {cancelMsg.type === "success" ? <FiCheckCircle size={15} /> : <FiAlertTriangle size={15} />}
                   {cancelMsg.text}
                 </div>
               ) : cancelTarget.status === "PENDING" ? (
@@ -293,81 +292,106 @@ export default function MyBookings() {
 // ── Booking Card ──────────────────────────────────────────────────────
 function BookingCard({ booking: b, styles, onCancel }) {
   const meta      = STATUS_META[b.status] || STATUS_META.PENDING;
-  const { Icon }  = meta;
   const canAction = b.status === "APPROVED" || b.status === "PENDING";
   const isPending = b.status === "PENDING";
+  const submittedDate = b.createdAt ? b.createdAt.split("T")[0] : null;
 
   return (
     <div className={`${styles.card} ${styles["card_" + b.status?.toLowerCase()]}`}>
       <div className={`${styles.accent} ${styles["accent_" + b.status?.toLowerCase()]}`} />
 
       <div className={styles.cardInner}>
+
+        {/* ── Top: resource name + status badge ── */}
         <div className={styles.cardTop}>
-          <div className={styles.resourceInfo}>
+          <div className={styles.nameBlock}>
             <span className={styles.resourceName}>{b.resourceName}</span>
-            <span className={styles.resourceLoc}>
-              <FiMapPin size={12} /> {b.resourceLocation || "—"}
-            </span>
+            {b.resourceLocation && (
+              <span className={styles.resourceLoc}>
+                <FiMapPin size={11} /> {b.resourceLocation}
+              </span>
+            )}
           </div>
           <span className={`${styles.statusBadge} ${styles[meta.cls]}`}>
-            <Icon size={13} /> {meta.label}
+            <span className={styles.badgeDot} />
+            {meta.label}
           </span>
         </div>
 
-        <div className={styles.detailGrid}>
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Date</span>
-            <span className={styles.detailValue}>{b.bookingDate || "—"}</span>
+        {/* ── Info strip: date / start / end / attendees ── */}
+        <div className={styles.infoStrip}>
+          <div className={styles.infoCell}>
+            <span className={styles.infoLabel}>Date</span>
+            <span className={styles.infoVal}>{b.bookingDate || "—"}</span>
           </div>
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Time</span>
-            <span className={styles.detailValue}>{b.startTime} – {b.endTime}</span>
+          <div className={styles.infoCell}>
+            <span className={styles.infoLabel}>Start</span>
+            <span className={styles.infoVal}>{fmt12(b.startTime)}</span>
           </div>
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Attendees</span>
-            <span className={styles.detailValue}>{b.expectedAttendees ?? "—"}</span>
+          <div className={styles.infoCell}>
+            <span className={styles.infoLabel}>End</span>
+            <span className={styles.infoVal}>{fmt12(b.endTime)}</span>
           </div>
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Submitted</span>
-            <span className={styles.detailValue}>{b.createdAt ? b.createdAt.split("T")[0] : "—"}</span>
+          <div className={styles.infoCell}>
+            <span className={styles.infoLabel}>
+              {b.resourceType === "EQUIPMENT" ? "Quantity" : "Attendees"}
+            </span>
+            <span className={styles.infoVal}>{b.expectedAttendees ?? "—"}</span>
           </div>
         </div>
 
-        <div className={styles.purposeRow}>
-          <span className={styles.detailLabel}>Purpose</span>
-          <span className={styles.purposeText}>{b.purpose}</span>
+        {/* ── Purpose ── */}
+        <div className={styles.purposeBlock}>
+          <div className={styles.purposeLabel}>Purpose</div>
+          <div className={styles.purposeText}>{b.purpose || "—"}</div>
         </div>
 
+        {/* ── Rejection reason ── */}
         {b.status === "REJECTED" && b.rejectionReason && (
           <div className={styles.reasonBox}>
-            <FiXCircle size={13} /> <span className={styles.reasonLabel}>Rejection Reason:</span> {b.rejectionReason}
+            <FiXCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span><strong>Rejection reason:</strong> {b.rejectionReason}</span>
           </div>
         )}
 
+        {/* ── Cancellation reason ── */}
         {b.status === "CANCELLED" && b.cancellationReason && (
           <div className={styles.cancelBox}>
-            <FiSlash size={13} /> <span className={styles.reasonLabel}>Cancellation Reason:</span> {b.cancellationReason}
+            <FiSlash size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span><strong>Cancellation reason:</strong> {b.cancellationReason}</span>
           </div>
         )}
 
-        {b.reviewedBy && (
-          <div className={styles.reviewedRow}>
-            <span className={styles.detailLabel}><FiUser size={12} /> Reviewed by:</span>
-            <span className={styles.detailValue}>{b.reviewedBy}</span>
-          </div>
-        )}
-
+        {/* ── Footer ── */}
         <div className={styles.cardFooter}>
-          <span className={styles.bookingId}><FiHash size={11} />{b.id}</span>
+          <div className={styles.footerMeta}>
+            {submittedDate && (
+              <span className={styles.metaChip}>
+                <FiCalendar size={11} /> Submitted {submittedDate}
+              </span>
+            )}
+            {b.reviewedBy ? (
+              <span className={styles.metaChip}>
+                <FiUser size={11} /> Reviewed by {b.reviewedBy}
+              </span>
+            ) : b.status === "PENDING" ? (
+              <span className={styles.metaChip}>Awaiting review</span>
+            ) : null}
+            <span className={styles.bookingId}>
+              <FiHash size={10} />{b.id}
+            </span>
+          </div>
+
           {canAction && (
             <button
-              className={`${styles.cancelBtn} ${isPending ? styles.removeBtn : ""}`}
+              className={`${styles.actionBtn} ${isPending ? styles.removeBtn : styles.cancelBtn}`}
               onClick={onCancel}
             >
               {isPending ? "Remove" : "Cancel Booking"}
             </button>
           )}
         </div>
+
       </div>
     </div>
   );

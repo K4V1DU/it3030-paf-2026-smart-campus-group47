@@ -47,10 +47,7 @@
 }
 .sub { font-size: 15px; color: #94a3b8; margin: 0 0 20px; }
 
-/* Search */
-.searchWrap {
-  position: relative; max-width: 420px; width: 100%;
-}
+.searchWrap { position: relative; max-width: 420px; width: 100%; }
 .searchIcon {
   position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
   width: 16px; height: 16px; color: #9ca3af; pointer-events: none;
@@ -64,10 +61,7 @@
   transition: background 0.2s, border-color 0.2s;
 }
 .searchInput::placeholder { color: rgba(255,255,255,0.45); }
-.searchInput:focus {
-  background: rgba(255,255,255,0.16);
-  border-color: rgba(255,255,255,0.45);
-}
+.searchInput:focus { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.45); }
 .searchClear {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   background: none; border: none; color: rgba(255,255,255,0.6);
@@ -75,27 +69,17 @@
 }
 .searchClear:hover { color: #fff; }
 
-/* ── Summary / Filter cards ── */
-.summaryCards {
-  display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
-}
+/* ── Summary cards ── */
+.summaryCards { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
 
 .summaryCard {
-  appearance: none; font-family: inherit;
-  cursor: pointer; text-align: center;
-
-  /* uniform unselected look */
+  appearance: none; font-family: inherit; cursor: pointer; text-align: center;
   background: rgba(255,255,255,0.07);
   border: 1.5px solid rgba(255,255,255,0.15);
   backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 14px 0;
-  width: 90px;                        /* fixed equal width */
-  display: flex; flex-direction: column;
-  align-items: center; gap: 5px;
-
-  transition: background 0.18s, border-color 0.18s,
-              box-shadow 0.18s, transform 0.15s;
+  border-radius: 16px; padding: 14px 0; width: 90px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  transition: background 0.18s, border-color 0.18s, box-shadow 0.18s, transform 0.15s;
 }
 .summaryCard:hover {
   background: rgba(255,255,255,0.13);
@@ -103,115 +87,138 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.2);
 }
-
 .summaryIcon  { color: rgba(255,255,255,0.65); }
 .summaryNum   { font-size: 26px; font-weight: 800; color: #fff; line-height: 1; }
-.summaryLabel {
-  font-size: 10px; color: #94a3b8;
-  text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
-}
+.summaryLabel { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 
 /* ══════════════════════════════
    CONTENT
 ══════════════════════════════ */
-.content {
-  max-width: 1140px; margin: 0 auto;
-  padding: 32px;
-}
-
-.list { display: flex; flex-direction: column; gap: 16px; }
+.content { max-width: 1140px; margin: 0 auto; padding: 32px; }
+.list    { display: flex; flex-direction: column; gap: 14px; }
 
 /* ══════════════════════════════
    BOOKING CARD
 ══════════════════════════════ */
 .card {
   background: #fff;
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border-radius: 14px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
   display: flex; overflow: hidden;
   transition: box-shadow 0.2s, transform 0.2s;
 }
-.card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.09); transform: translateY(-2px); }
+.card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); transform: translateY(-2px); }
 
-.accent           { width: 5px; flex-shrink: 0; }
+/* Left accent bar */
+.accent           { width: 4px; flex-shrink: 0; }
 .accent_pending   { background: #f59e0b; }
 .accent_approved  { background: #22c55e; }
 .accent_rejected  { background: #ef4444; }
-.accent_cancelled { background: #9ca3af; }
+.accent_cancelled { background: #d1d5db; }
 
-.cardInner { flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+.cardInner {
+  flex: 1; padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 14px;
+}
 
+/* Top row */
 .cardTop {
   display: flex; align-items: flex-start;
-  justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  justify-content: space-between; gap: 12px;
 }
-.resourceInfo { display: flex; flex-direction: column; gap: 3px; }
-.resourceName { font-size: 17px; font-weight: 700; color: #111827; }
-.resourceLoc  { font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 4px; }
+.nameBlock     { display: flex; flex-direction: column; gap: 3px; }
+.resourceName  { font-size: 16px; font-weight: 700; color: #111827; line-height: 1.3; }
+.resourceLoc   { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 4px; }
 
+/* Status badge */
 .statusBadge {
+  display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 12px; border-radius: 20px;
   font-size: 12px; font-weight: 700;
-  display: flex; align-items: center; gap: 5px;
   white-space: nowrap; flex-shrink: 0;
 }
-.pending   { background: #fef3c7; color: #92400e; }
-.approved  { background: #dcfce7; color: #14532d; }
-.rejected  { background: #fee2e2; color: #7f1d1d; }
-.cancelled { background: #f3f4f6; color: #4b5563; }
+.badgeDot   { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.pending    { background: #fef9c3; color: #a16207; }
+.pending    .badgeDot { background: #f59e0b; }
+.approved   { background: #dcfce7; color: #15803d; }
+.approved   .badgeDot { background: #22c55e; }
+.rejected   { background: #fee2e2; color: #b91c1c; }
+.rejected   .badgeDot { background: #ef4444; }
+.cancelled  { background: #f3f4f6; color: #4b5563; }
+.cancelled  .badgeDot { background: #9ca3af; }
 
-.detailGrid {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 12px; padding: 14px;
-  background: #f8fafc; border-radius: 12px;
+/* ── Info strip ── */
+.infoStrip {
+  display: flex;
   border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f8fafc;
 }
-.detailItem  { display: flex; flex-direction: column; gap: 3px; }
-.detailLabel { font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 3px; }
-.detailValue { font-size: 14px; font-weight: 600; color: #1f2937; }
+.infoCell {
+  flex: 1; padding: 10px 14px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.infoCell + .infoCell { border-left: 1px solid #f0f0f0; }
+.infoLabel {
+  font-size: 10px; font-weight: 600; color: #9ca3af;
+  text-transform: uppercase; letter-spacing: 0.6px;
+}
+.infoVal { font-size: 13px; font-weight: 700; color: #1f2937; }
 
-.purposeRow  { display: flex; flex-direction: column; gap: 4px; }
-.purposeText { font-size: 14px; color: #374151; line-height: 1.5; }
+/* ── Purpose block ── */
+.purposeBlock {
+  background: #f8fafc;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.purposeLabel {
+  font-size: 10px; font-weight: 600; color: #9ca3af;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  margin-bottom: 4px;
+}
+.purposeText { font-size: 13px; color: #374151; line-height: 1.55; }
 
+/* ── Reason boxes ── */
 .reasonBox {
+  display: flex; align-items: flex-start; gap: 8px;
   background: #fff1f2; border: 1px solid #fecdd3;
   border-radius: 8px; padding: 10px 14px;
-  font-size: 13px; color: #be123c;
-  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: #b91c1c; line-height: 1.5;
 }
 .cancelBox {
+  display: flex; align-items: flex-start; gap: 8px;
   background: #f9fafb; border: 1px solid #e5e7eb;
   border-radius: 8px; padding: 10px 14px;
-  font-size: 13px; color: #4b5563;
-  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: #4b5563; line-height: 1.5;
 }
-.reasonLabel { font-weight: 700; }
 
-.reviewedRow { display: flex; align-items: center; gap: 8px; }
-
+/* ── Footer ── */
 .cardFooter {
   display: flex; align-items: center; justify-content: space-between;
   padding-top: 12px; border-top: 1px solid #f3f4f6;
+  flex-wrap: wrap; gap: 8px;
 }
-.bookingId { font-size: 12px; color: #9ca3af; font-weight: 500; display: flex; align-items: center; gap: 2px; }
+.footerMeta   { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.metaChip     { font-size: 11px; color: #9ca3af; display: flex; align-items: center; gap: 4px; }
+.bookingId    { font-size: 11px; color: #d1d5db; display: flex; align-items: center; gap: 2px; font-weight: 600; }
 
+/* Action buttons */
+.actionBtn {
+  padding: 7px 16px; background: none; border-radius: 8px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+}
 .cancelBtn {
-  padding: 7px 18px; background: none;
-  border: 1.5px solid #fca5a5; border-radius: 8px;
-  font-size: 13px; font-weight: 600; color: #dc2626;
-  cursor: pointer; transition: all 0.15s;
+  border: 1.5px solid #fca5a5; color: #dc2626;
 }
 .cancelBtn:hover { background: #fee2e2; border-color: #ef4444; }
-
 .removeBtn {
-  border-color: #f97316 !important;
-  color: #c2410c !important;
+  border: 1.5px solid #fdba74; color: #c2410c;
 }
-.removeBtn:hover {
-  background: #fff7ed !important;
-  border-color: #ea580c !important;
-}
+.removeBtn:hover { background: #fff7ed; border-color: #fb923c; }
 
 /* ══════════════════════════════
    MODAL
@@ -250,10 +257,7 @@
 
 .modalBody { padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; }
 
-.cancelInfo {
-  background: #f8fafc; border-radius: 10px;
-  border: 1px solid #e5e7eb; padding: 12px 16px;
-}
+.cancelInfo { background: #f8fafc; border-radius: 10px; border: 1px solid #e5e7eb; padding: 12px 16px; }
 .cancelResource { font-size: 15px; font-weight: 700; color: #111827; margin: 0 0 4px; }
 .cancelMeta     { font-size: 13px; color: #6b7280; margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
@@ -309,7 +313,7 @@
 
 /* ── Empty ── */
 .empty     { text-align: center; padding: 80px 24px; color: #6b7280; }
-.emptyIcon { color: #d1d5db; margin-bottom: 16px; display: flex; justify-content: center; }
+.emptyIcon { color: #d1d5db; margin: 0 auto 16px; display: flex; justify-content: center; }
 .empty h3  { font-size: 20px; color: #374151; margin: 0 0 8px; }
 .empty p   { font-size: 14px; margin: 0 0 20px; }
 .resetBtn {
@@ -348,6 +352,7 @@
   .title      { font-size: 26px; }
   .searchWrap { max-width: 100%; }
   .content    { padding: 20px 16px; }
-  .detailGrid { grid-template-columns: 1fr 1fr; }
+  .infoStrip  { flex-wrap: wrap; }
+  .infoCell   { min-width: 45%; }
   .cardInner  { padding: 16px; }
 }
