@@ -18,6 +18,8 @@ public interface BookingRepo extends JpaRepository<Booking, Long> {
     // All bookings for a specific resource
     List<Booking> findByResourceId(Long resourceId);
 
+
+
     // All bookings by status (Admin filter)
     List<Booking> findByStatus(BookingStatus status);
 
@@ -48,4 +50,6 @@ public interface BookingRepo extends JpaRepository<Booking, Long> {
             @Param("endTime") LocalTime endTime,
             @Param("excludeId") Long excludeId
     );
+
+
 }
