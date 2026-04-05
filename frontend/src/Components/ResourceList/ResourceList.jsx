@@ -121,7 +121,7 @@ function ScrollColumn({ items, selected, onSelect, fmt, loop = true }) {
 }
 
 // ── Time Picker Popup ────────────────────────────────────────────────
-function TimePickerPopup({ value, onSave, onClose, minTime, maxTime, minTimeOffset = 0, label }) {
+function TimePickerPopup({ value, onSave, onClose, minTime, maxTime, minTimeOffset = 0, label, isToday = false }) {
   const parse = (t) => {
     if (!t) return { h: 12, m: 0, p: "AM" };
     const [hh, mm] = t.split(":").map(Number);
@@ -139,6 +139,19 @@ function TimePickerPopup({ value, onSave, onClose, minTime, maxTime, minTimeOffs
     const h24  = to24(selH, selP);
     const tStr = `${pad(h24)}:${pad(selM)}`;
     const tMin = toMinutes(tStr);
+
+    // ── Past-time guard (only when booking date is today) ──
+    if (isToday) {
+      const now    = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      if (tMin <= nowMin) {
+        setErr(
+          `This time has already passed. Please select a time after ` +
+          `${displayTime(`${pad(now.getHours())}:${pad(now.getMinutes())}`)}.`
+        );
+        return;
+      }
+    }
 
     if (minTime !== undefined && minTime !== null) {
       const floor = toMinutes(minTime) + minTimeOffset;
@@ -352,6 +365,28 @@ export default function ResourceList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // ── Submit-time past-time guard (catches clock ticking past while form was open) ──
+    if (form.bookingDate === today) {
+      const now    = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+
+      if (toMinutes(form.startTime) <= nowMin) {
+        setBookingMsg({
+          type: "error",
+          text: `Start time ${displayTime(form.startTime)} has already passed. Please choose a future time.`,
+        });
+        return;
+      }
+      if (toMinutes(form.endTime) <= nowMin) {
+        setBookingMsg({
+          type: "error",
+          text: `End time ${displayTime(form.endTime)} has already passed. Please choose a future time.`,
+        });
+        return;
+      }
+    }
+
     setSubmitting(true); setBookingMsg(null);
     const payload = {
       userId:            CURRENT_USER_ID,
@@ -711,6 +746,7 @@ export default function ResourceList() {
           label="Select start time"
           value={form.startTime}
           minTime={availFrom} maxTime={availTo} minTimeOffset={0}
+          isToday={form.bookingDate === today}
           onSave={setStartTime}
           onClose={() => setShowStart(false)}
         />
@@ -722,6 +758,7 @@ export default function ResourceList() {
           label="Select end time"
           value={form.endTime}
           minTime={form.startTime} maxTime={availTo} minTimeOffset={30}
+          isToday={form.bookingDate === today}
           onSave={v => setForm(p => ({ ...p, endTime: v }))}
           onClose={() => setShowEnd(false)}
         />
