@@ -16,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/Ticket")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")  // React dev server
+@CrossOrigin
 public class TicketController {
 
     private final TicketService ticketService;
