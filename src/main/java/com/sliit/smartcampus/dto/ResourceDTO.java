@@ -1,5 +1,6 @@
 package com.sliit.smartcampus.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sliit.smartcampus.model.enums.ResourceStatus;
 import com.sliit.smartcampus.model.enums.ResourceType;
 import lombok.AllArgsConstructor;
@@ -20,14 +21,18 @@ public class ResourceDTO {
     private Integer capacity;
     private String location;
     private String description;
+
+    @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime availableFrom;
+
+    @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime availableTo;
+
     private ResourceStatus status;
 
-    // Image fields — imageData is excluded (fetched via /Resource/image/{id})
     private String imageName;
     private String imageType;
-    private String imageUrl;    // e.g. "Resource/image/5"
+    private String imageUrl;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

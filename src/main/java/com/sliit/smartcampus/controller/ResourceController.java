@@ -1,6 +1,8 @@
 package com.sliit.smartcampus.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sliit.smartcampus.dto.ResourceDTO;
 import com.sliit.smartcampus.service.ResourceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,17 +11,23 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import java.util.List;
 
 @RestController
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping(value = "Resource/")
 public class ResourceController {
 
     @Autowired
     private ResourceService resourceService;
+
+    private ObjectMapper buildMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
+    }
 
     // GET ALL
     @GetMapping("getAllResource")
@@ -34,7 +42,6 @@ public class ResourceController {
     }
 
     // GET IMAGE
-    // React usage: <img src="http://localhost:8080/Resource/image/1" />
     @GetMapping("image/{id}")
     public ResponseEntity<byte[]> getResourceImage(@PathVariable Long id) {
         return resourceService.getResourceImage(id);
@@ -46,9 +53,7 @@ public class ResourceController {
             @RequestParam("resource") String resourceJson,
             @RequestPart(value = "image", required = false) MultipartFile image
     ) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        ResourceDTO resourceDTO = mapper.readValue(resourceJson, ResourceDTO.class);
+        ResourceDTO resourceDTO = buildMapper().readValue(resourceJson, ResourceDTO.class);
         return new ResponseEntity<>(resourceService.addResource(resourceDTO, image), HttpStatus.CREATED);
     }
 
@@ -59,10 +64,14 @@ public class ResourceController {
             @RequestParam("resource") String resourceJson,
             @RequestPart(value = "image", required = false) MultipartFile image
     ) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        ResourceDTO resourceDTO = mapper.readValue(resourceJson, ResourceDTO.class);
+        ResourceDTO resourceDTO = buildMapper().readValue(resourceJson, ResourceDTO.class);
         return ResponseEntity.ok(resourceService.updateResource(id, resourceDTO, image));
+    }
+
+    // REMOVE IMAGE ONLY
+    @DeleteMapping("removeImage/{id}")
+    public ResponseEntity<ResourceDTO> removeResourceImage(@PathVariable Long id) {
+        return ResponseEntity.ok(resourceService.removeResourceImage(id));
     }
 
     // DELETE
