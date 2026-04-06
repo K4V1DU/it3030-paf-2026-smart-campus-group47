@@ -29,9 +29,9 @@ public class ResourceService {
     // ── GET ALL ──────────────────────────────────────────────────────
     public List<ResourceDTO> getAllResources() {
         List<Resource> resourcesList = resourceRepo.findAll();
-        List<ResourceDTO> dtos = modelMapper.map(resourcesList, new TypeToken<List<ResourceDTO>>(){}.getType());
+        List<ResourceDTO> dtos = modelMapper.map(
+                resourcesList, new TypeToken<List<ResourceDTO>>(){}.getType());
 
-        // Attach imageUrl to each DTO that has an image stored
         for (int i = 0; i < resourcesList.size(); i++) {
             if (resourcesList.get(i).getImageData() != null) {
                 dtos.get(i).setImageUrl("Resource/image/" + resourcesList.get(i).getId());
@@ -50,14 +50,12 @@ public class ResourceService {
         return dto;
     }
 
-    // ── GET IMAGE (raw bytes for the controller to serve) ────────────
+    // ── GET IMAGE ────────────────────────────────────────────────────
     public ResponseEntity<byte[]> getResourceImage(Long id) {
         Resource resource = findById(id);
-
         if (resource.getImageData() == null) {
             return ResponseEntity.notFound().build();
         }
-
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(resource.getImageType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
@@ -66,42 +64,31 @@ public class ResourceService {
     }
 
     // ── CREATE ───────────────────────────────────────────────────────
-    public ResourceDTO addResource(ResourceDTO resourceDTO, MultipartFile image) {
-        Resource resource = modelMapper.map(resourceDTO, Resource.class);
+    public ResourceDTO addResource(ResourceDTO dto, MultipartFile image) {
+        Resource resource = new Resource();
+        applyDtoFields(resource, dto);
         applyImage(resource, image);
-        Resource saved = resourceRepo.save(resource);
-
-        ResourceDTO result = modelMapper.map(saved, ResourceDTO.class);
-        if (saved.getImageData() != null) {
-            result.setImageUrl("Resource/image/" + saved.getId());
-        }
-        return result;
+        return toDTO(resourceRepo.save(resource));
     }
 
     // ── UPDATE ───────────────────────────────────────────────────────
-    public ResourceDTO updateResource(Long id, ResourceDTO resourceDTO, MultipartFile image) {
-        if (!resourceRepo.existsById(id)) {
-            throw new RuntimeException("Resource not found with id: " + id);
-        }
-        Resource resource = modelMapper.map(resourceDTO, Resource.class);
-        resource.setId(id);
-
-        // Keep existing image if no new image is provided
-        if (image == null || image.isEmpty()) {
-            Resource existing = findById(id);
-            resource.setImageData(existing.getImageData());
-            resource.setImageType(existing.getImageType());
-            resource.setImageName(existing.getImageName());
-        } else {
+    public ResourceDTO updateResource(Long id, ResourceDTO dto, MultipartFile image) {
+        Resource resource = findById(id);
+        applyDtoFields(resource, dto);
+        if (image != null && !image.isEmpty()) {
             applyImage(resource, image);
         }
+        // No image in request = keep existing image untouched
+        return toDTO(resourceRepo.save(resource));
+    }
 
-        Resource updated = resourceRepo.save(resource);
-        ResourceDTO result = modelMapper.map(updated, ResourceDTO.class);
-        if (updated.getImageData() != null) {
-            result.setImageUrl("Resource/image/" + updated.getId());
-        }
-        return result;
+    // ── REMOVE IMAGE ONLY ────────────────────────────────────────────
+    public ResourceDTO removeResourceImage(Long id) {
+        Resource resource = findById(id);
+        resource.setImageData(null);
+        resource.setImageType(null);
+        resource.setImageName(null);
+        return toDTO(resourceRepo.save(resource));
     }
 
     // ── DELETE ───────────────────────────────────────────────────────
@@ -113,10 +100,22 @@ public class ResourceService {
         return "Resource with id " + id + " deleted successfully";
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────
+    // ── Private helpers ───────────────────────────────────────────────
+
     private Resource findById(Long id) {
         return resourceRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resource not found with id: " + id));
+    }
+
+    private void applyDtoFields(Resource resource, ResourceDTO dto) {
+        resource.setName(dto.getName());
+        resource.setType(dto.getType());
+        resource.setCapacity(dto.getCapacity());
+        resource.setLocation(dto.getLocation());
+        resource.setDescription(dto.getDescription());
+        resource.setAvailableFrom(dto.getAvailableFrom());
+        resource.setAvailableTo(dto.getAvailableTo());
+        resource.setStatus(dto.getStatus());
     }
 
     private void applyImage(Resource resource, MultipartFile image) {
@@ -129,5 +128,13 @@ public class ResourceService {
                 throw new RuntimeException("Failed to read image: " + e.getMessage(), e);
             }
         }
+    }
+
+    private ResourceDTO toDTO(Resource resource) {
+        ResourceDTO dto = modelMapper.map(resource, ResourceDTO.class);
+        if (resource.getImageData() != null) {
+            dto.setImageUrl("Resource/image/" + resource.getId());
+        }
+        return dto;
     }
 }
