@@ -4,7 +4,6 @@ import com.sliit.smartcampus.model.enums.Ticketpriority;
 import com.sliit.smartcampus.model.enums.Ticketcategory;
 import com.sliit.smartcampus.model.enums.Ticketstatus;
 
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,8 +21,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class Ticket {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -54,28 +53,28 @@ public class Ticket {
     @Column(nullable = false)
     private String location;
 
-    // Who reported the ticket (user email or name)
     @NotBlank(message = "Reported by is required")
     @Column(nullable = false)
     private String reportedBy;
 
-    // Preferred contact details
     private String contactDetails;
-
-    // Technician or staff assigned to this ticket
     private String assignedTo;
 
-    // Resolution notes added by technician
     @Column(columnDefinition = "TEXT")
     private String resolutionNotes;
 
-    // Reason for rejection (if status = REJECTED)
     private String rejectionReason;
 
-    // Up to 3 image attachment URLs
+    /**
+     * Stores up to 3 image attachments as base64 data URIs (e.g. "data:image/png;base64,...")
+     * Each value is stored as LONGTEXT to accommodate large base64-encoded image blobs.
+     */
     @ElementCollection
-    @CollectionTable(name = "ticket_attachments", joinColumns = @JoinColumn(name = "ticket_id"))
-    @Column(name = "attachment_url")
+    @CollectionTable(
+            name = "ticket_attachments",
+            joinColumns = @JoinColumn(name = "ticket_id")
+    )
+    @Column(name = "attachment_blob", columnDefinition = "LONGTEXT")
     @Size(max = 3, message = "Maximum 3 attachments allowed")
     private List<String> attachments = new ArrayList<>();
 

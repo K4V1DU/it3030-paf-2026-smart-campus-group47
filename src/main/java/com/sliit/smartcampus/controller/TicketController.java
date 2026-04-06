@@ -8,6 +8,7 @@ import com.sliit.smartcampus.service.TicketService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,14 +17,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/Ticket")
 @RequiredArgsConstructor
-@CrossOrigin
+@CrossOrigin(origins = "*")   // tighten to your frontend origin in production
 public class TicketController {
 
     private final TicketService ticketService;
 
     // ── Create ───────────────────────────────────────────────
 
-    @PostMapping("/create")
+    /**
+     * Accepts JSON with up to 3 base64 image data URIs in the "attachments" field.
+     * These are validated by @Pattern in TicketDTO and stored as LONGTEXT blobs.
+     */
+    @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<TicketDTO> createTicket(@Valid @RequestBody TicketDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ticketService.createTicket(dto));
     }

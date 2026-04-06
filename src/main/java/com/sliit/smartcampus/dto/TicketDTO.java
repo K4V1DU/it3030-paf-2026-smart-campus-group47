@@ -5,6 +5,7 @@ import com.sliit.smartcampus.model.enums.Ticketpriority;
 import com.sliit.smartcampus.model.enums.Ticketstatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -41,8 +42,18 @@ public class TicketDTO {
     private String resolutionNotes;
     private String rejectionReason;
 
+    /**
+     * Each entry must be a base64 data URI starting with "data:image/".
+     * Maximum 3 attachments (images stored as blobs in the DB via LONGTEXT).
+     */
     @Size(max = 3, message = "Maximum 3 attachments allowed")
-    private List<String> attachments;
+    private List<
+            @Pattern(
+                    regexp = "^data:image\\/(png|jpeg|jpg|webp|gif);base64,.+",
+                    message = "Each attachment must be a valid base64 image data URI"
+            )
+                    String
+            > attachments;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
