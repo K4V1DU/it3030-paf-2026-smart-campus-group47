@@ -1,143 +1,121 @@
 /* ══════════════════════════════════════════════════
-   TicketList.css  –  all classes prefixed "tl-"
+   TicketList.css  —  matches ResourceList design
+   tl- prefix on all classes to avoid conflicts
 ══════════════════════════════════════════════════ */
 
 /* ── Page ── */
 .tl-page {
   min-height: 100vh;
-  background: #f0f2f5;
+  background: #eef0f4;
   font-family: "Inter", "Segoe UI", sans-serif;
 }
 
-/* ── Loading / Error State ── */
+/* ── Loading / Error ── */
 .tl-state {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  background: #f0f2f5;
+  gap: 16px;
+  background: #eef0f4;
 }
 
 .tl-state-text {
   font-size: 15px;
   color: #64748b;
+  margin: 0;
 }
 
-/* Spinner */
 .tl-spinner {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: 3px solid #e2e8f0;
   border-top-color: #2563eb;
   border-radius: 50%;
-  animation: tl-spin 0.75s linear infinite;
+  animation: tl-spin 0.7s linear infinite;
 }
 
-@keyframes tl-spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes tl-spin { to { transform: rotate(360deg); } }
 
-/* Error box */
 .tl-error-box {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
   background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 12px;
-  padding: 18px 24px;
+  border-radius: 10px;
+  padding: 16px 24px;
   color: #dc2626;
-  max-width: 480px;
-  width: 90%;
+  font-size: 14px;
 }
 
-.tl-error-title {
-  margin: 0 0 4px;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.tl-error-msg {
-  margin: 0;
-  font-size: 13px;
-  color: #ef4444;
-  line-height: 1.5;
-}
-
-/* ── Hero ── */
+/* ══════════════════════════════════════════════════
+   HERO — dark navy to blue gradient with curved
+   bottom edge, identical to ResourceList screenshot
+══════════════════════════════════════════════════ */
 .tl-hero {
-  background: linear-gradient(135deg, #0d1b3e 0%, #1a2f6e 45%, #2563eb 100%);
-  padding: 56px 40px 90px;
+  background: linear-gradient(120deg, #0b1a3b 0%, #162d6b 40%, #1d4ed8 72%, #3b82f6 100%);
+  padding: 60px 24px 100px;
   position: relative;
+  border-bottom-left-radius:  50% 40px;
+  border-bottom-right-radius: 50% 40px;
   overflow: hidden;
 }
 
-.tl-hero::before {
+.tl-hero::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 80% 60% at 70% 40%, rgba(99, 179, 237, 0.15), transparent);
+  background: radial-gradient(ellipse 55% 80% at 85% 50%, rgba(147,197,253,0.18), transparent 70%);
   pointer-events: none;
 }
 
 .tl-hero-inner {
-  max-width: 860px;
+  max-width: 820px;
   margin: 0 auto;
   text-align: center;
   position: relative;
+  z-index: 1;
 }
 
 .tl-eyebrow {
   display: block;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 3px;
-  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 4px;
+  color: rgba(255, 255, 255, 0.55);
   text-transform: uppercase;
-  margin-bottom: 12px;
+  margin: 0 0 14px;
 }
 
 .tl-hero-title {
-  font-size: clamp(24px, 5vw, 42px);
+  font-size: clamp(28px, 5vw, 46px);
   font-weight: 800;
-  color: #fff;
-  margin: 0 0 10px;
-  line-height: 1.15;
+  color: #ffffff;
+  margin: 0 0 12px;
+  line-height: 1.12;
+  letter-spacing: -0.5px;
 }
 
 .tl-hero-sub {
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.65);
-  margin: 0 0 32px;
+  color: rgba(255, 255, 255, 0.62);
+  margin: 0 0 36px;
 }
 
-/* ── Count Pill ── */
-.tl-count-pill {
-  display: inline-block;
-  margin-top: 14px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 20px;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 14px;
-}
-
-/* ── Search ── */
+/* ── Search bar — wide white pill ── */
 .tl-search-wrap {
   position: relative;
-  max-width: 620px;
-  margin: 0 auto 20px;
+  max-width: 640px;
+  margin: 0 auto 24px;
   display: flex;
   align-items: center;
 }
 
 .tl-search-icon {
   position: absolute;
-  left: 18px;
+  left: 20px;
   color: #94a3b8;
   pointer-events: none;
   z-index: 1;
@@ -145,29 +123,27 @@
 
 .tl-search-input {
   width: 100%;
-  padding: 14px 44px 14px 48px;
-  border-radius: 40px;
+  padding: 15px 48px 15px 52px;
+  border-radius: 50px;
   border: none;
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(255, 255, 255, 0.96);
   font-size: 15px;
   color: #1e293b;
   outline: none;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
   box-sizing: border-box;
   transition: box-shadow 0.2s;
 }
 
 .tl-search-input:focus {
-  box-shadow: 0 4px 32px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 28px rgba(37, 99, 235, 0.30);
 }
 
-.tl-search-input::placeholder {
-  color: #94a3b8;
-}
+.tl-search-input::placeholder { color: #94a3b8; }
 
 .tl-search-clear {
   position: absolute;
-  right: 14px;
+  right: 16px;
   background: #e2e8f0;
   border: none;
   border-radius: 50%;
@@ -178,16 +154,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
-  flex-shrink: 0;
+  transition: background 0.15s;
 }
+.tl-search-clear:hover { background: #cbd5e1; }
 
-.tl-search-clear:hover {
-  background: #cbd5e1;
-}
-
-/* ── Filters Row ── */
-.tl-hero-bottom {
+/* ── Filter row ── */
+.tl-filter-row {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -195,142 +167,133 @@
   gap: 10px;
 }
 
-.tl-filters {
+.tl-select-wrap {
+  position: relative;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
 }
 
 .tl-select {
   appearance: none;
   -webkit-appearance: none;
-  background: rgba(255, 255, 255, 0.12)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
-    no-repeat right 12px center;
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.10);
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 24px;
-  color: #fff;
-  font-size: 13px;
+  border-radius: 50px;
+  color: #ffffff;
+  font-size: 13.5px;
   font-weight: 500;
-  padding: 8px 32px 8px 16px;
+  padding: 9px 36px 9px 18px;
   cursor: pointer;
   outline: none;
+  backdrop-filter: blur(6px);
   transition: background 0.2s;
+  min-width: 130px;
 }
 
-.tl-select:hover {
-  background-color: rgba(255, 255, 255, 0.22);
-}
+.tl-select:hover { background: rgba(255, 255, 255, 0.18); }
 
 .tl-select option {
-  background: #1a2f6e;
+  background: #1a3066;
   color: #fff;
+}
+
+.tl-select-arrow {
+  position: absolute;
+  right: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
 }
 
 .tl-clear-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: 24px;
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.38);
+  border-radius: 50px;
   color: #fca5a5;
   font-size: 13px;
   font-weight: 600;
-  padding: 8px 16px;
+  padding: 9px 18px;
   cursor: pointer;
   transition: background 0.2s;
 }
+.tl-clear-btn:hover { background: rgba(239, 68, 68, 0.30); }
 
-.tl-clear-btn:hover {
-  background: rgba(239, 68, 68, 0.35);
-}
-
-/* ── View Toggle ── */
+/* ── View toggle pill ── */
 .tl-view-toggle {
   display: flex;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.10);
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 24px;
+  border-radius: 50px;
   overflow: hidden;
+  backdrop-filter: blur(6px);
 }
 
 .tl-view-btn {
-  background: none;
+  background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.55);
-  padding: 8px 13px;
+  padding: 9px 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   transition: background 0.2s, color 0.2s;
 }
+.tl-view-btn:hover { color: #fff; }
+.tl-view-active    { background: rgba(255, 255, 255, 0.22) !important; color: #fff !important; }
 
-.tl-view-btn:hover {
-  color: #fff;
-}
-
-.tl-view-active {
-  background: rgba(255, 255, 255, 0.22) !important;
-  color: #fff !important;
-}
-
-/* ── Content ── */
+/* ══════════════════════════════════════════════════
+   CONTENT — light grey area below the wave
+══════════════════════════════════════════════════ */
 .tl-content {
   max-width: 1280px;
-  margin: -40px auto 0;
-  padding: 0 32px 80px;
-  position: relative;
+  margin: 0 auto;
+  padding: 48px 32px 80px;
 }
 
-/* ── Empty State ── */
+/* ── Empty state ── */
 .tl-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
   text-align: center;
-  padding: 100px 20px;
 }
 
 .tl-empty-icon {
-  display: flex;
-  justify-content: center;
-  color: #cbd5e1;
-  margin-bottom: 16px;
+  color: #b0b8c9;
+  margin-bottom: 18px;
+  line-height: 1;
 }
 
-.tl-empty h3 {
-  font-size: 18px;
+.tl-empty-title {
+  font-size: 19px;
   font-weight: 700;
   color: #334155;
   margin: 0 0 8px;
 }
 
-.tl-empty p {
+.tl-empty-sub {
   font-size: 14px;
   color: #94a3b8;
-  margin: 0 0 20px;
+  margin: 0 0 22px;
 }
 
-/* ── Shared Buttons ── */
 .tl-reset-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   background: #2563eb;
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 10px 20px;
+  padding: 10px 22px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
 }
-
-.tl-reset-btn:hover {
-  opacity: 0.88;
-}
+.tl-reset-btn:hover { opacity: 0.88; }
 
 /* ── Grid ── */
 .tl-grid {
@@ -339,21 +302,20 @@
   gap: 20px;
 }
 
-/* ── Grid Card ── */
+/* ── Grid card ── */
 .tl-card {
-  background: #fff;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-  cursor: default;
 }
 
 .tl-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.09);
   border-color: #bfdbfe;
 }
 
@@ -406,7 +368,6 @@
   color: #0f172a;
   margin: 0;
   line-height: 1.3;
-  word-break: break-word;
 }
 
 .tl-card-desc {
@@ -433,22 +394,9 @@
   gap: 6px;
   font-size: 12px;
   color: #64748b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.tl-assigned-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #475569;
-  font-weight: 500;
-  margin-top: 2px;
-}
-
-/* ── List View ── */
+/* ── List view ── */
 .tl-list-view {
   display: flex;
   flex-direction: column;
@@ -456,7 +404,7 @@
 }
 
 .tl-list-card {
-  background: #fff;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   display: flex;
@@ -483,10 +431,7 @@
   flex-shrink: 0;
 }
 
-.tl-list-body {
-  flex: 1;
-  min-width: 0;
-}
+.tl-list-body  { flex: 1; min-width: 0; }
 
 .tl-list-top {
   display: flex;
@@ -494,10 +439,6 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 6px;
-}
-
-.tl-list-title-group {
-  min-width: 0;
 }
 
 .tl-list-badges {
@@ -516,16 +457,16 @@
 }
 
 /* ── Badges ── */
-.tl-status-badge,
-.tl-priority-badge {
+.tl-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-size: 11px;
   font-weight: 700;
   border-radius: 20px;
   padding: 3px 10px;
   white-space: nowrap;
+  letter-spacing: 0.2px;
 }
 
 /* Status */
@@ -543,31 +484,13 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .tl-hero    { padding: 40px 20px 70px; }
-  .tl-content { padding: 0 16px 60px; }
+  .tl-hero {
+    padding: 40px 16px 80px;
+    border-bottom-left-radius:  50% 28px;
+    border-bottom-right-radius: 50% 28px;
+  }
+  .tl-content { padding: 32px 16px 60px; }
   .tl-grid    { grid-template-columns: 1fr; }
-
-  .tl-list-top {
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .tl-list-badges {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 480px) {
-  .tl-hero-bottom {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .tl-filters {
-    flex-direction: column;
-  }
-
-  .tl-select {
-    width: 100%;
-  }
+  .tl-select  { min-width: 110px; font-size: 12.5px; }
+  .tl-list-top { flex-direction: column; gap: 6px; }
 }
