@@ -1,8 +1,14 @@
 import { useState } from "react";
 import styles from "./Navbar.module.css";
 
+// Helper to join class names cleanly
+const cls = (...classes) => classes.filter(Boolean).join(" ");
+
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const currentPath = window.location.pathname;
+
+  const isActive = (href) => currentPath === href || currentPath.startsWith(href);
 
   return (
     <nav className={styles.nav}>
@@ -13,10 +19,15 @@ export default function Navbar() {
         </div>
 
         <div className={styles.navLinks}>
-          <a href="#" className={`${styles.navLink} ${styles.navLinkActive}`}>Resources</a>
-          <a href="#" className={styles.navLink}>Bookings</a>
-          <a href="#" className={styles.navLink}>Schedule</a>
-          <a href="#" className={styles.navLink}>About</a>
+          <a href="/resourcelist" className={cls(styles.navLink, isActive("/resourcelist") && styles.navLinkActive)}>
+            Resources
+          </a>
+          <a href="/Booking" className={cls(styles.navLink, isActive("/Booking") && styles.navLinkActive)}>
+            Bookings
+          </a>
+          <a href="/ticket" className={cls(styles.navLink, isActive("/ticket") && styles.navLinkActive)}>
+            Tickets
+          </a>
         </div>
 
         <div className={styles.navActions}>
@@ -46,11 +57,10 @@ export default function Navbar() {
 
       {menuOpen && (
         <div className={styles.mobileMenu}>
-          <a href="#" className={styles.mobileLink}>Resources</a>
-          <a href="#" className={styles.mobileLink}>Bookings</a>
-          <a href="#" className={styles.mobileLink}>Schedule</a>
-          <a href="#" className={styles.mobileLink}>About</a>
-          <a href="#" className={styles.mobileLink}>Login</a>
+          <a href="/resourcelist" className={cls(styles.mobileLink, isActive("/resourcelist") && styles.mobileLinkActive)}>Resources</a>
+          <a href="/Booking"      className={cls(styles.mobileLink, isActive("/Booking") && styles.mobileLinkActive)}>Bookings</a>
+          <a href="/ticket"       className={cls(styles.mobileLink, isActive("/ticket") && styles.mobileLinkActive)}>Tickets</a>
+          <a href="#"             className={styles.mobileLink}>Login</a>
         </div>
       )}
     </nav>
