@@ -5,7 +5,7 @@ import {
   LayoutGrid, List, X, CalendarDays,
 } from "lucide-react";
 import styles from "./ResourceList.module.css";
-import Navbar from "../NavBar/UserNavBar/Navbar";
+import Navbar from "../NavBar/UserNavBar/UserNavbar";
 
 const BASE_URL        = "http://localhost:8080";
 const CURRENT_USER_ID = 1;

@@ -6,7 +6,7 @@ import {
   ChevronDown, ShieldCheck, Upload,
 } from "lucide-react";
 import styles from "./ResourceManagement.module.css";
-import Navbar from "../NavBar/Navbar";
+import Navbar from "../NavBar/AdminNavBar/AdminNavbar";
 
 const BASE_URL      = "http://localhost:8080";
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80";
