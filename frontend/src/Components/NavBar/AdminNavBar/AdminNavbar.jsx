@@ -1,5 +1,5 @@
 import { useState } from "react";
-import styles from "./Navbar.module.css";
+import styles from "./AdminNavbar.module.css";
 
 // Helper to join class names cleanly
 const cls = (...classes) => classes.filter(Boolean).join(" ");
@@ -19,15 +19,13 @@ export default function Navbar() {
         </div>
 
         <div className={styles.navLinks}>
-          <a href="/resourcelist" className={cls(styles.navLink, isActive("/resourcelist") && styles.navLinkActive)}>
-            Resources
+          <a href="/ResourceManagement" className={cls(styles.navLink, isActive("/ResourceManagement") && styles.navLinkActive)}>
+            Resource Management
           </a>
-          <a href="/Booking" className={cls(styles.navLink, isActive("/Booking") && styles.navLinkActive)}>
-            Bookings
+          <a href="/BookingReviews" className={cls(styles.navLink, isActive("/BookingReviews") && styles.navLinkActive)}>
+            Booking Reviews
           </a>
-          <a href="/ticket" className={cls(styles.navLink, isActive("/ticket") && styles.navLinkActive)}>
-            Tickets
-          </a>
+        
         </div>
 
         <div className={styles.navActions}>
