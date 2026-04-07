@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import com.sliit.smartcampus.model.Booking;
+import com.sliit.smartcampus.repository.BookingRepo;
 
 import java.io.IOException;
 import java.util.List;
@@ -91,10 +93,18 @@ public class ResourceService {
         return toDTO(resourceRepo.save(resource));
     }
 
+    @Autowired
+    private BookingRepo bookingRepo;
+
     // ── DELETE ───────────────────────────────────────────────────────
     public String deleteResource(Long id) {
         if (!resourceRepo.existsById(id)) {
             throw new RuntimeException("Resource not found with id: " + id);
+        }
+        // Delete all bookings related to this resource first
+        List<Booking> relatedBookings = bookingRepo.findByResourceId(id);
+        if (!relatedBookings.isEmpty()) {
+            bookingRepo.deleteAll(relatedBookings);
         }
         resourceRepo.deleteById(id);
         return "Resource with id " + id + " deleted successfully";
