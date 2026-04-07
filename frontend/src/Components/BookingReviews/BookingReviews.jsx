@@ -6,7 +6,7 @@ import {
   FiCheck, FiThumbsDown, FiFilter, FiAlertCircle,
 } from "react-icons/fi";
 import styles from "./BookingReviews.module.css";
-import Navbar from "../NavBar/Navbar";
+import Navbar from "../NavBar/AdminNavBar/AdminNavbar";
 
 const BASE_URL    = "http://localhost:8080";
 const REVIEWED_BY = "admin@sliit.lk";

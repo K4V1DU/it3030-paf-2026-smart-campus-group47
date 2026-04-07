@@ -71,12 +71,19 @@
   background: rgba(59,130,246,0.18);
 }
 
+.mobileLinkActive {
+  background: rgba(59, 130, 246, 0.18);
+  color: #ffffff;
+}
+
 .navActions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
 }
+
+
 
 .loginBtn {
   display: flex;
