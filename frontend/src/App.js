@@ -8,6 +8,9 @@ import ResourceManagement from './Components/ResourceManagement/ResourceManageme
 
 
 
+import TicketRaise from './Components/TicketRaise/Ticketraise';
+import TicketDetails from './Components/TicketDetails/TicketDetails';
+import AdminTicketDashboard from './Components/AdminTicketDashboard/AdminTicketDashboard'
 
 
 function App() {
@@ -20,6 +23,9 @@ function App() {
       <Route path="/Ticket" element={<TicketList />} />
       <Route path="/ResourceManagement" element={<ResourceManagement />} />
 
+      <Route path="/AddTicket" element={<TicketRaise />} />
+      <Route path="/Ticket/:id" element={<TicketDetails />} />
+      <Route path="/Admin/Tickets" element={<AdminTicketDashboard />} />
 
 
 
