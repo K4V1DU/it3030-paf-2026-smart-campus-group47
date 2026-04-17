@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../NavBar/Navbar";
+import Navbar from "../NavBar/AdminNavBar/AdminNavbar";
 import "./AdminTicketDashboard.css";
 
 // react-icons
