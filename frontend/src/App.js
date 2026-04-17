@@ -10,7 +10,10 @@ import ResourceManagement from './Components/ResourceManagement/ResourceManageme
 
 import TicketRaise from './Components/TicketRaise/Ticketraise';
 import TicketDetails from './Components/TicketDetails/TicketDetails';
+
 import AdminTicketDashboard from './Components/AdminTicketDashboard/AdminTicketDashboard'
+import AdminTicketDetails from './Components/AdminTicketDetails/AdminTicketDetails'
+
 
 
 function App() {
@@ -26,6 +29,9 @@ function App() {
       <Route path="/AddTicket" element={<TicketRaise />} />
       <Route path="/Ticket/:id" element={<TicketDetails />} />
       <Route path="/Admin/Tickets" element={<AdminTicketDashboard />} />
+      <Route path="/Admin/Tickets/:id" element={<AdminTicketDetails />} />
+
+
 
 
 
