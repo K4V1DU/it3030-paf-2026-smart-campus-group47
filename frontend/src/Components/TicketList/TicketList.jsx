@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "./TicketList.css";
-import Navbar from "../NavBar/Navbar";
+import Navbar from "../NavBar/UserNavBar/UserNavbar";
 
 import {
   FiSearch, FiX, FiGrid, FiList, FiMapPin, FiUser, FiTool,
