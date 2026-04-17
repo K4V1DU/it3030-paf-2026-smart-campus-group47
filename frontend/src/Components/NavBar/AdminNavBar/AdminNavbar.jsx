@@ -25,6 +25,9 @@ export default function Navbar() {
           <a href="/BookingReviews" className={cls(styles.navLink, isActive("/BookingReviews") && styles.navLinkActive)}>
             Booking Reviews
           </a>
+           <a href="/Admin/Tickets" className={cls(styles.navLink, isActive("/Admin/Tickets") && styles.navLinkActive)}>
+            Tickets Management
+          </a>
         
         </div>
 
