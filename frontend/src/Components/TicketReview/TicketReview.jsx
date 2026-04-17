@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../NavBar/TechnicianNavBar/TechnicianNavBar";
 import "./TicketReview.css";
-import Navbar from "../NavBar/UserNavBar/UserNavbar";
 
 import {
   FiSearch, FiClock, FiCheckCircle, FiXCircle, FiSlash,
