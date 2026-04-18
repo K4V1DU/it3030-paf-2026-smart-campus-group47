@@ -7,7 +7,11 @@ const cls = (...classes) => classes.filter(Boolean).join(" ");
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const [profileDropdown, setProfileDropdown] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const currentPath = window.location.pathname;
+
+  const isActive = (href) => currentPath === href || currentPath.startsWith(href);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -44,63 +48,101 @@ export default function Navbar() {
           <span className={styles.navBrandName}>SmartCampus</span>
         </div>
 
+        <div className={styles.navLinks}>
+          <a href="/resourcelist" className={cls(styles.navLink, isActive("/resourcelist") && styles.navLinkActive)}>Resources</a>
+          <a href="/Booking"      className={cls(styles.navLink, isActive("/Booking") && styles.navLinkActive)}>Bookings</a>
+          <a href="/ticket"       className={cls(styles.navLink, isActive("/ticket") && styles.navLinkActive)}>Tickets</a>
+        </div>
+
         <div className={styles.navActions}>
           {user ? (
-            <div className={styles.profileSection}>
-              <div className={styles.profileDropdown}>
-                <button
-                  className={styles.profileBtn}
-                  onClick={() => setProfileDropdown(!profileDropdown)}
-                >
-                  <img
-                    src={getProfileImage()}
-                    alt="Profile"
-                    className={styles.profileImage}
-                    onError={(e) => {
-                      e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='8' r='4' fill='%2393c5fd'/%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' stroke='%2364748b' stroke-width='2'/%3E%3C/svg%3E";
-                    }}
-                  />
-                  <span className={styles.profileName}>{user.name}</span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </button>
-
-                {profileDropdown && (
-                  <div className={styles.dropdownMenu}>
-                    <div className={styles.dropdownItem}>
-                      <span className={styles.dropdownLabel}>Signed in as</span>
-                      <span className={styles.dropdownValue}>{user.name}</span>
+            <>
+              <div className={styles.profileSection}>
+                <div className={styles.profileDropdown}>
+                  <button
+                    className={styles.profileBtn}
+                    onClick={() => setProfileDropdown(!profileDropdown)}
+                  >
+                    <img
+                      src={getProfileImage()}
+                      alt="Profile"
+                      className={styles.profileImage}
+                      onError={(e) => {
+                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='8' r='4' fill='%2393c5fd'/%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' stroke='%2364748b' stroke-width='2'/%3E%3C/svg%3E";
+                      }}
+                    />
+                    <span className={styles.profileName}>{user.name}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                  {profileDropdown && (
+                    <div className={styles.dropdownMenu}>
+                      <div className={styles.dropdownItem}>
+                        <span className={styles.dropdownLabel}>Signed in as</span>
+                        <span className={styles.dropdownValue}>{user.name}</span>
+                      </div>
+                      <div className={styles.dropdownItem}>
+                        <span className={styles.dropdownLabel}>Role</span>
+                        <span className={styles.dropdownValue}>{user.role}</span>
+                      </div>
+                      <div className={styles.dropdownDivider}></div>
+                      <button className={styles.dropdownLogoutBtn} onClick={handleLogout}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                          <polyline points="16 17 21 12 16 7"/>
+                          <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Logout
+                      </button>
                     </div>
-                    <div className={styles.dropdownItem}>
-                      <span className={styles.dropdownLabel}>Role</span>
-                      <span className={styles.dropdownValue}>{user.role}</span>
-                    </div>
-                    <div className={styles.dropdownDivider}></div>
-                    <button className={styles.dropdownLogoutBtn} onClick={handleLogout}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                        <polyline points="16 17 21 12 16 7"/>
-                        <line x1="21" y1="12" x2="9" y2="12"/>
-                      </svg>
-                      Logout
-                    </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+              <button className={styles.hamburger} onClick={() => setMenuOpen(o => !o)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+            </>
           ) : (
-            <a href="/register" className={styles.loginBtn}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-                <polyline points="10 17 15 12 10 7"/>
-                <line x1="15" y1="12" x2="3" y2="12"/>
-              </svg>
-              Login
-            </a>
+            <>
+              <a href="/" className={styles.loginBtn}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                  <polyline points="10 17 15 12 10 7"/>
+                  <line x1="15" y1="12" x2="3" y2="12"/>
+                </svg>
+                Login
+              </a>
+              <button className={styles.hamburger} onClick={() => setMenuOpen(o => !o)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {menuOpen && (
+        <div className={styles.mobileMenu}>
+          <a href="/resourcelist" className={cls(styles.mobileLink, isActive("/resourcelist") && styles.mobileLinkActive)}>Resources</a>
+          <a href="/Booking"      className={cls(styles.mobileLink, isActive("/Booking") && styles.mobileLinkActive)}>Bookings</a>
+          <a href="/ticket"       className={cls(styles.mobileLink, isActive("/ticket") && styles.mobileLinkActive)}>Tickets</a>
+          {user ? (
+            <button className={styles.mobileLogoutBtn} onClick={handleLogout}>
+              Logout
+            </button>
+          ) : (
+            <a href="/" className={styles.mobileLink}>Login</a>
+          )}
+        </div>
+      )}
     </nav>
   );
 }
