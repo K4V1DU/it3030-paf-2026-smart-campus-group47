@@ -1,4 +1,7 @@
-import { Routes, Route } from "react-router-dom";
+
+import { Routes, Route } from 'react-router-dom';
+import Login from './Components/Login/Login';
+import Register from './Components/Register/Register';
 import ResourceList from './Components/ResourceList/ResourceList';
 import MyBookings from './Components/Bookings/MyBookings';
 import BookingReviews from './Components/BookingReviews/BookingReviews'
@@ -18,11 +21,20 @@ import AdminTicketDetails from './Components/AdminTicketDetails/AdminTicketDetai
 
 
 
+
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<ResourceList />} />
-      <Route path="/ResourceList" element={<ResourceList />} />
+    <div>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/home"                 element={<ResourceList />} />
+        <Route path="/admin/dashboard"      element={<ResourceList />} />
+        <Route path="/manager/dashboard"    element={<ResourceList />} />
+        <Route path="/technician/dashboard" element={<ResourceList />} />
+        <Route path="/ResourceList" element={<ResourceList />} />
+      
+      
       <Route path="/Booking" element={<MyBookings />} />
       <Route path="/BookingReviews" element={<BookingReviews />} />
       <Route path="/Ticket" element={<TicketList />} />

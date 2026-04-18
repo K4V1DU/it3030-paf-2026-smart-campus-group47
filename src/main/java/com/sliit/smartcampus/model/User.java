@@ -57,8 +57,8 @@ public class User {
     private String imageName;           // original filename
     // ────────────────────────────────────────────────────────────────
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Booking> bookings;
+   // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    //private List<Booking> bookings;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
