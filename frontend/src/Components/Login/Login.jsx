@@ -34,13 +34,28 @@ export default function Login() {
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify({
-        id: data.userId,
-        name: data.name,
-        email: data.email,
-        role: data.role,
+        id:       data.userId,
+        name:     data.name,
+        email:    data.email,
+        role:     data.role,
         imageUrl: data.imageUrl,
       }));
-      navigate('/dashboard');
+
+      // Role based navigation
+      switch (data.role) {
+        case 'ADMIN':
+          navigate('/admin/dashboard');
+          break;
+        case 'MANAGER':
+          navigate('/manager/dashboard');
+          break;
+        case 'TECHNICIAN':
+          navigate('/technician/dashboard');
+          break;
+        default:
+          navigate('/home'); // USER
+      }
+
     } catch (err) {
       setError(err.message);
     } finally {

@@ -11,7 +11,7 @@ export default function Register() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'USER',
+   // role: 'USER',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -154,7 +154,9 @@ export default function Register() {
                 onChange={handleChange}
                 className={`${styles.input} ${styles.select}`}
               >
-                <option value="USER">Student / User</option>
+                <option value="USER">Student</option>
+                <option value="TECHNICIAN">Technician</option>
+                <option value="MANAGER">Manager</option>
               </select>
             </div>
           </div>
