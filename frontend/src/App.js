@@ -39,7 +39,7 @@ function App() {
       <Route path="/BookingReviews" element={<BookingReviews />} />
       <Route path="/Ticket" element={<TicketList />} />
       <Route path="/ResourceManagement" element={<ResourceManagement />} />
-
+      <Route path="/Login" element={<Login />} />
       <Route path="/AddTicket" element={<TicketRaise />} />
       <Route path="/Ticket/:id" element={<TicketDetails />} />
       <Route path="/Admin/Tickets" element={<AdminTicketDashboard />} />
