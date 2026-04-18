@@ -9,7 +9,6 @@ import {
   FiAlertCircle, FiRotateCcw, FiUser, FiMail,
   FiMapPin, FiTag, FiFileText, FiAlertTriangle,
 } from "react-icons/fi";
-import { MdOutlineAttachFile } from "react-icons/md";
 
 // ── Constants ──────────────────────────────────────────────────
 const BASE_URL = "http://localhost:8080";
@@ -18,11 +17,11 @@ const CATEGORIES = ["EQUIPMENT", "FACILITY", "IT", "FURNITURE", "OTHER"];
 const PRIORITIES  = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
 const CATEGORY_META = {
-  EQUIPMENT: { Icon: FaTools,        label: "Equipment", color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
-  FACILITY:  { Icon: FaBuilding,     label: "Facility",  color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
-  IT:        { Icon: FaLaptop,       label: "IT",        color: "#6366f1", bg: "#eef2ff", border: "#c7d2fe" },
-  FURNITURE: { Icon: FaChair,        label: "Furniture", color: "#d97706", bg: "#fffbeb", border: "#fde68a" },
-  OTHER:     { Icon: FaClipboardList,label: "Other",     color: "#64748b", bg: "#f8fafc", border: "#e2e8f0" },
+  EQUIPMENT: { Icon: FaTools,         label: "Equipment", color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
+  FACILITY:  { Icon: FaBuilding,      label: "Facility",  color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
+  IT:        { Icon: FaLaptop,        label: "IT",        color: "#6366f1", bg: "#eef2ff", border: "#c7d2fe" },
+  FURNITURE: { Icon: FaChair,         label: "Furniture", color: "#d97706", bg: "#fffbeb", border: "#fde68a" },
+  OTHER:     { Icon: FaClipboardList, label: "Other",     color: "#64748b", bg: "#f8fafc", border: "#e2e8f0" },
 };
 
 const PRIORITY_META = {
@@ -32,47 +31,48 @@ const PRIORITY_META = {
   CRITICAL: { label: "Critical", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", Icon: FaBolt      },
 };
 
+// ── Helpers ────────────────────────────────────────────────────
+/** Read the user object that Navbar stores in localStorage. */
+function getStoredUser() {
+  try {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Build a display string for "Reported By" from the user object. */
+function buildReportedBy(user) {
+  if (!user) return "";
+  const name  = user.name || "";
+  const email = user.email || "";
+  if (name && email) return `${name} (${email})`;
+  return name || email;
+}
+
 // ── Component ──────────────────────────────────────────────────
 export default function TicketRaise() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userLoading, setUserLoading] = useState(true);
+  // ── Load current user from localStorage (same source as Navbar) ──
+  const [currentUser] = useState(() => getStoredUser());
 
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    category: "",
-    priority: "",
-    location: "",
-    reportedBy: "",
-    contactDetails: "",
+  const initForm = (user) => ({
+    title:          "",
+    description:    "",
+    category:       "",
+    priority:       "",
+    location:       "",
+    reportedBy:     buildReportedBy(user),   // ← pre-filled from stored user
+    contactDetails: user?.email || "",
   });
+
+  const [form,       setForm]       = useState(() => initForm(currentUser));
   const [attachments, setAttachments] = useState([]);
   const [errors,      setErrors]      = useState({});
   const [submitting,  setSubmitting]  = useState(false);
   const [submitted,   setSubmitted]   = useState(false);
   const [dragOver,    setDragOver]    = useState(false);
   const fileRef = useRef();
-
-  // ── Fetch current user ───────────────────────────────────────
-  // Assumes user ID is saved in localStorage as "userId" after login.
-  // Adjust the key name to match your auth implementation.
-  useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    if (!userId) { setUserLoading(false); return; }
-
-    fetch(`${BASE_URL}/User/getUser/${userId}`)
-      .then(r => { if (!r.ok) throw new Error("Failed"); return r.json(); })
-      .then(user => {
-        setCurrentUser(user);
-        // Pre-fill reportedBy with full name + email
-        const reportedBy = user.email
-          ? `${user.name || user.firstName || ""} (${user.email})`.trim()
-          : user.name || user.firstName || "";
-        setForm(f => ({ ...f, reportedBy, contactDetails: user.email || "" }));
-      })
-      .catch(() => { /* silently fall back to manual entry */ })
-      .finally(() => setUserLoading(false));
-  }, []);
 
   // ── Form handlers ────────────────────────────────────────────
   const handleChange = (e) => {
@@ -94,7 +94,7 @@ export default function TicketRaise() {
     const remaining = 3 - attachments.length;
     const toAdd     = Array.from(files).slice(0, remaining);
     if (!toAdd.length) return;
-    const results = await Promise.all(toAdd.map(readFile).map(p => p.catch(e => ({ error: e }))));
+    const results = await Promise.all(toAdd.map(f => readFile(f).catch(e => ({ error: e }))));
     setAttachments(p => [...p, ...results.filter(r => !r.error)]);
   };
 
@@ -137,19 +137,19 @@ export default function TicketRaise() {
 
   const resetForm = () => {
     setSubmitted(false);
-    const reportedBy = currentUser
-      ? (currentUser.email
-          ? `${currentUser.name || currentUser.firstName || ""} (${currentUser.email})`.trim()
-          : currentUser.name || currentUser.firstName || "")
-      : "";
-    setForm({
-      title: "", description: "", category: "", priority: "",
-      location: "", reportedBy,
-      contactDetails: currentUser?.email || "",
-    });
+    setForm(initForm(currentUser));
     setAttachments([]);
     setErrors({});
   };
+
+  // ── Avatar helper ────────────────────────────────────────────
+  const avatarInitial = currentUser?.name
+    ? currentUser.name[0].toUpperCase()
+    : "U";
+
+  const avatarSrc = currentUser?.imageUrl
+    ? `${BASE_URL}/${currentUser.imageUrl}`
+    : null;
 
   // ── Success screen ───────────────────────────────────────────
   if (submitted) {
@@ -197,22 +197,26 @@ export default function TicketRaise() {
       <main className="tr-main">
         <form className="tr-form" onSubmit={handleSubmit} noValidate>
 
-          {/* ── Reporter banner (auto-filled) ── */}
+          {/* ── Reporter banner (auto-filled from stored user) ── */}
           {currentUser && (
             <div className="tr-reporter-banner">
               <div className="tr-reporter-avatar">
-                {currentUser.profileImage
-                  ? <img src={`${BASE_URL}/User/image/${currentUser.id}`} alt="avatar" />
-                  : <span>{(currentUser.name || currentUser.firstName || "U")[0].toUpperCase()}</span>
+                {avatarSrc
+                  ? <img src={avatarSrc} alt="avatar"
+                      onError={e => { e.target.style.display = "none"; }} />
+                  : <span>{avatarInitial}</span>
                 }
               </div>
               <div className="tr-reporter-info">
-                <p className="tr-reporter-name">
-                  {currentUser.name || currentUser.firstName || "Unknown User"}
-                </p>
-                <p className="tr-reporter-email">
-                  <FiMail size={11} /> {currentUser.email}
-                </p>
+                <p className="tr-reporter-name">{currentUser.name || "Unknown User"}</p>
+                {currentUser.email && (
+                  <p className="tr-reporter-email">
+                    <FiMail size={11} /> {currentUser.email}
+                  </p>
+                )}
+                {currentUser.role && (
+                  <p className="tr-reporter-role">{currentUser.role}</p>
+                )}
               </div>
               <span className="tr-reporter-tag">
                 <FiUser size={11} /> Submitting as you
@@ -289,7 +293,10 @@ export default function TicketRaise() {
                           "--tile-bg":     m.bg,
                           "--tile-border": m.border,
                         } : {}}
-                        onClick={() => { setForm(p => ({ ...p, category: c })); setErrors(p => ({ ...p, category: "" })); }}
+                        onClick={() => {
+                          setForm(p => ({ ...p, category: c }));
+                          setErrors(p => ({ ...p, category: "" }));
+                        }}
                       >
                         <m.Icon className="tr-tile-icon" />
                         <span>{m.label}</span>
@@ -318,7 +325,10 @@ export default function TicketRaise() {
                           "--tile-bg":     m.bg,
                           "--tile-border": m.border,
                         } : {}}
-                        onClick={() => { setForm(prev => ({ ...prev, priority: p })); setErrors(prev => ({ ...prev, priority: "" })); }}
+                        onClick={() => {
+                          setForm(prev => ({ ...prev, priority: p }));
+                          setErrors(prev => ({ ...prev, priority: "" }));
+                        }}
                       >
                         <m.Icon className="tr-tile-icon" style={{ color: m.color }} />
                         <span>{m.label}</span>
@@ -384,11 +394,12 @@ export default function TicketRaise() {
                 Contact Details <span className="tr-opt">(optional)</span>
               </label>
               <input
-                className="tr-input"
+                className={`tr-input ${currentUser ? "tr-input-readonly" : ""}`}
                 name="contactDetails"
                 placeholder="Phone number or preferred contact method"
                 value={form.contactDetails}
                 onChange={handleChange}
+                readOnly={!!currentUser?.email}
               />
             </div>
           </div>

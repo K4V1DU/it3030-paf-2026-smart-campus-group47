@@ -35,7 +35,7 @@
   --tr-radius-md:   10px;
   --tr-radius-sm:   7px;
 
-  --tr-font:        'Plus Jakarta Sans', sans-serif;
+  --tr-font:        'Plus Jakarta Sans', 'Inter', sans-serif;
   --tr-mono:        'JetBrains Mono', monospace;
 
   --tr-shadow-sm:   0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
@@ -53,9 +53,9 @@
   color: var(--tr-text-1);
 }
 
-/* ── Hero (matches TicketList hero) ── */
+/* ── Hero ── */
 .tr-hero {
-  background: linear-gradient(120deg, #0b1a3b 0%, #162d6b 38%, #1d4ed8 70%, #3b82f6 100%);
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d4a7c 50%, #4a6fa5 100%);
   padding: 52px 24px 88px;
   position: relative;
 }
@@ -203,12 +203,15 @@
   justify-content: center;
   overflow: hidden;
   border: 2px solid var(--tr-blue-border);
+  position: relative;
 }
 
 .tr-reporter-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  position: absolute;
+  inset: 0;
 }
 
 .tr-reporter-info {
@@ -226,11 +229,26 @@
 .tr-reporter-email {
   font-size: 12px;
   color: var(--tr-text-2);
-  margin: 0;
+  margin: 0 0 2px;
   display: flex;
   align-items: center;
   gap: 4px;
   font-family: var(--tr-mono);
+}
+
+/* ── NEW: role badge under email in the banner ── */
+.tr-reporter-role {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tr-blue);
+  background: #fff;
+  border: 1px solid var(--tr-blue-border);
+  border-radius: 20px;
+  padding: 2px 8px;
+  margin-top: 2px;
 }
 
 .tr-reporter-tag {
@@ -253,8 +271,8 @@
 .tr-row-2      { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
 @media (max-width: 640px) {
-  .tr-row-2    { grid-template-columns: 1fr; }
-  .tr-section  { padding: 22px 20px; }
+  .tr-row-2           { grid-template-columns: 1fr; }
+  .tr-section         { padding: 22px 20px; }
   .tr-reporter-banner { padding: 14px 20px; }
 }
 
@@ -310,16 +328,17 @@
   box-shadow: 0 0 0 3px rgba(220,38,38,0.1) !important;
 }
 
+/* Read-only inputs (auto-filled from account) */
 .tr-input-readonly {
   background: var(--tr-surface-2) !important;
   color: var(--tr-text-2) !important;
   cursor: default;
+  /* keep them visually distinct but not faded out */
+  opacity: 1;
 }
 
 /* Input with icon overlay */
-.tr-input-wrap {
-  position: relative;
-}
+.tr-input-wrap { position: relative; }
 
 .tr-input-locked {
   position: absolute;
@@ -402,9 +421,7 @@
   min-width: auto;
 }
 
-.tr-tile-group-prio .tr-tile-icon {
-  font-size: 14px;
-}
+.tr-tile-group-prio .tr-tile-icon { font-size: 14px; }
 
 /* ── Drop zone ── */
 .tr-dropzone {
