@@ -7,7 +7,7 @@ import {
   FiSearch, FiX, FiGrid, FiList, FiMapPin, FiUser, FiTool,
   FiAlertCircle, FiAlertTriangle, FiCheckCircle, FiXCircle,
   FiClock, FiArchive, FiMonitor, FiBox, FiHome, FiChevronDown,
-  FiPlus, FiCalendar,
+  FiPlus, FiCalendar, FiTrash2,
 } from "react-icons/fi";
 import { MdOutlineChair } from "react-icons/md";
 
@@ -43,24 +43,23 @@ const SORT_OPTIONS = [
   { label: "Priority",     value: "prio-asc" },
 ];
 
-function fmt(iso) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
 export default function TicketList() {
   const navigate = useNavigate();
 
-  const [tickets, setTickets]               = useState([]);
-  const [loading, setLoading]               = useState(true);
-  const [error, setError]                   = useState(null);
-  const [search, setSearch]                 = useState("");
-  const [filterStatus, setFilterStatus]     = useState("All");
-  const [filterPriority, setFilterPriority] = useState("All");
-  const [filterCategory, setFilterCategory] = useState("All");
-  const [sort, setSort]                     = useState("az");
-  const [view, setView]                     = useState("grid");
+  const [tickets,         setTickets]         = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [error,           setError]           = useState(null);
+  const [search,          setSearch]          = useState("");
+  const [filterStatus,    setFilterStatus]    = useState("All");
+  const [filterPriority,  setFilterPriority]  = useState("All");
+  const [filterCategory,  setFilterCategory]  = useState("All");
+  const [sort,            setSort]            = useState("az");
+  const [view,            setView]            = useState("grid");
+
+  // ── Delete modal state ──────────────────────────────
+  const [deleteTarget, setDeleteTarget] = useState(null); // { id, title }
+  const [deleting,     setDeleting]     = useState(false);
+  const [deleteError,  setDeleteError]  = useState(null);
 
   useEffect(() => {
     fetch(`${BASE_URL}/Ticket/getAllTickets`)
@@ -100,6 +99,33 @@ export default function TicketList() {
     setSearch(""); setFilterStatus("All"); setFilterPriority("All"); setFilterCategory("All");
   };
   const hasFilters = filterStatus !== "All" || filterPriority !== "All" || filterCategory !== "All" || search;
+
+  // ── Delete handlers ─────────────────────────────────
+  const openDeleteModal  = (ticket) => { setDeleteTarget(ticket); setDeleteError(null); };
+  const closeDeleteModal = ()        => { if (!deleting) { setDeleteTarget(null); setDeleteError(null); } };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`${BASE_URL}/Ticket/delete/${deleteTarget.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete ticket. Please try again.");
+      setTickets(prev => prev.filter(t => t.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (e) {
+      setDeleteError(e.message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ── Close modal on Escape key ───────────────────────
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") closeDeleteModal(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [deleting]);
 
   if (loading) return (
     <div className="tl-state-screen">
@@ -145,9 +171,9 @@ export default function TicketList() {
 
           <div className="tl-filter-row">
             {[
-              { value: filterCategory, set: setFilterCategory, opts: categories, allLabel: "All Types"       },
-              { value: filterStatus,   set: setFilterStatus,   opts: statuses,   allLabel: "All Statuses"    },
-              { value: filterPriority, set: setFilterPriority, opts: priorities, allLabel: "All Priorities"  },
+              { value: filterCategory, set: setFilterCategory, opts: categories, allLabel: "All Types"      },
+              { value: filterStatus,   set: setFilterStatus,   opts: statuses,   allLabel: "All Statuses"   },
+              { value: filterPriority, set: setFilterPriority, opts: priorities, allLabel: "All Priorities" },
             ].map(({ value, set, opts, allLabel }, i) => (
               <div className="tl-pill-select" key={i}>
                 <select value={value} onChange={e => set(e.target.value)}>
@@ -184,6 +210,17 @@ export default function TicketList() {
 
       {/* ── CONTENT ── */}
       <div className="tl-content">
+
+        {/* ── Top action bar: count + Raise Ticket ── */}
+        <div className="tl-content-header">
+          <p className="tl-result-count">
+            <span>{filtered.length}</span> ticket{filtered.length !== 1 ? "s" : ""} found
+          </p>
+          <button className="tl-raise-top-btn" onClick={() => navigate("/AddTicket")}>
+            <FiPlus size={16} /> Raise Ticket
+          </button>
+        </div>
+
         {filtered.length === 0 ? (
           <div className="tl-empty">
             <FiSearch size={52} strokeWidth={1.1} className="tl-empty-icon" />
@@ -196,19 +233,29 @@ export default function TicketList() {
         ) : view === "grid" ? (
           <div className="tl-grid">
             {filtered.map(t => (
-              <GridCard key={t.id} t={t} onClick={() => navigate(`/Ticket/${t.id}`)} />
+              <GridCard
+                key={t.id}
+                t={t}
+                onClick={() => navigate(`/Ticket/${t.id}`)}
+                onDelete={() => openDeleteModal(t)}
+              />
             ))}
           </div>
         ) : (
           <div className="tl-list-view">
             {filtered.map(t => (
-              <ListCard key={t.id} t={t} onClick={() => navigate(`/Ticket/${t.id}`)} />
+              <ListCard
+                key={t.id}
+                t={t}
+                onClick={() => navigate(`/Ticket/${t.id}`)}
+                onDelete={() => openDeleteModal(t)}
+              />
             ))}
           </div>
         )}
       </div>
 
-      {/* ── RAISE TICKET ── */}
+      {/* ── RAISE TICKET FOOTER BANNER ── */}
       <div className="tl-raise-section">
         <div className="tl-raise-inner">
           <div className="tl-raise-text">
@@ -220,16 +267,70 @@ export default function TicketList() {
           </button>
         </div>
       </div>
+
+      {/* ── DELETE CONFIRMATION MODAL ── */}
+      {deleteTarget && (
+        <div className="tl-modal-overlay" onClick={closeDeleteModal}>
+          <div className="tl-modal" onClick={e => e.stopPropagation()}>
+
+            {/* Icon */}
+            <div className="tl-modal-icon-ring">
+              <FiTrash2 size={28} />
+            </div>
+
+            {/* Text */}
+            <h2 className="tl-modal-title">Delete Ticket?</h2>
+            <p className="tl-modal-body">
+              You're about to permanently delete
+              <span className="tl-modal-ticket-name"> "{deleteTarget.title}"</span>.
+              This action cannot be undone.
+            </p>
+
+            {/* Error */}
+            {deleteError && (
+              <div className="tl-modal-error">
+                <FiAlertCircle size={14} /> {deleteError}
+              </div>
+            )}
+
+            {/* Ticket ID pill */}
+            <div className="tl-modal-meta">
+              <span className="tl-modal-id-pill">Ticket #{deleteTarget.id}</span>
+            </div>
+
+            {/* Actions */}
+            <div className="tl-modal-actions">
+              <button
+                className="tl-modal-cancel"
+                onClick={closeDeleteModal}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                className="tl-modal-confirm"
+                onClick={confirmDelete}
+                disabled={deleting}
+              >
+                {deleting
+                  ? <><span className="tl-modal-spinner" /> Deleting…</>
+                  : <><FiTrash2 size={15} /> Yes, Delete</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-/* ─── Grid Card — matches the resource card screenshot ─── */
-function GridCard({ t, onClick }) {
-  const sm  = STATUS_META[t.status]     || STATUS_META.OPEN;
-  const pm  = PRIORITY_META[t.priority] || PRIORITY_META.LOW;
+/* ─── Grid Card ─── */
+function GridCard({ t, onClick, onDelete }) {
+  const sm  = STATUS_META[t.status]      || STATUS_META.OPEN;
+  const pm  = PRIORITY_META[t.priority]  || PRIORITY_META.LOW;
   const cat = CATEGORY_THEME[t.category] || CATEGORY_THEME.DEFAULT;
-  const CatIcon = cat.Icon;
+  const CatIcon  = cat.Icon;
   const isClosed = t.status === "CLOSED" || t.status === "REJECTED";
 
   return (
@@ -239,24 +340,19 @@ function GridCard({ t, onClick }) {
       onClick={onClick}
       onKeyDown={e => e.key === "Enter" && onClick()}
     >
-      {/* ── Banner (mirrors resource card image area) ── */}
+      {/* Banner */}
       <div className="tl-card-img" style={{ background: cat.bg }}>
-        {/* Large faded icon as background texture */}
         <div className="tl-banner-bg-icon">
           <CatIcon size={110} strokeWidth={0.8} />
         </div>
-
-        {/* Status badge — top-right frosted pill (like ACTIVE badge) */}
         <span className={`tl-status-badge ${sm.badgeCls}`}>
           <span className="tl-status-dot" style={{ background: sm.dot }} />
           {sm.label}
         </span>
-
-        {/* Category pill — bottom-left dark pill (like LAB pill) */}
         <span className="tl-type-pill">{t.category || "OTHER"}</span>
       </div>
 
-      {/* ── Card body ── */}
+      {/* Body */}
       <div className="tl-card-body">
         <p className="tl-card-id">#{t.id}</p>
         <h2 className="tl-card-name">{t.title}</h2>
@@ -268,7 +364,6 @@ function GridCard({ t, onClick }) {
           {t.assignedTo && <span className="tl-meta-item"><FiTool   size={13} /> {t.assignedTo}</span>}
         </div>
 
-        {/* Time row — mirrors resource card's time row with top border */}
         <div className="tl-time-row">
           <FiClock size={13} />
           <span className={`tl-prio-pill ${pm.cls}`}>
@@ -281,13 +376,14 @@ function GridCard({ t, onClick }) {
           )}
         </div>
 
-        {/* Button row — Schedule + Book Now layout */}
+        {/* Button row: Delete + View Ticket */}
         <div className="tl-card-btn-row">
           <button
-            className="tl-schedule-btn"
-            onClick={e => { e.stopPropagation(); onClick(); }}
+            className="tl-delete-btn"
+            onClick={e => { e.stopPropagation(); onDelete(); }}
+            title="Delete ticket"
           >
-            <FiCalendar size={14} /> Details
+            <FiTrash2 size={14} /> Delete
           </button>
           <button
             className={`tl-book-btn${isClosed ? " tl-book-btn-disabled" : ""}`}
@@ -303,7 +399,7 @@ function GridCard({ t, onClick }) {
 }
 
 /* ─── List Card ─── */
-function ListCard({ t, onClick }) {
+function ListCard({ t, onClick, onDelete }) {
   const sm  = STATUS_META[t.status]      || STATUS_META.OPEN;
   const pm  = PRIORITY_META[t.priority]  || PRIORITY_META.LOW;
   const cat = CATEGORY_THEME[t.category] || CATEGORY_THEME.DEFAULT;
@@ -316,7 +412,6 @@ function ListCard({ t, onClick }) {
       onClick={onClick}
       onKeyDown={e => e.key === "Enter" && onClick()}
     >
-      {/* Colored icon sidebar */}
       <div className="tl-list-icon-block" style={{ background: cat.bg }}>
         <CatIcon size={24} strokeWidth={1.4} color="rgba(255,255,255,0.85)" />
       </div>
@@ -345,10 +440,17 @@ function ListCard({ t, onClick }) {
             {t.assignedTo && <span className="tl-meta-item"><FiTool   size={12} /> {t.assignedTo}</span>}
           </div>
           <div className="tl-list-actions">
-            <button className="tl-schedule-btn-sm" onClick={e => { e.stopPropagation(); onClick(); }}>
-              <FiCalendar size={13} /> Details
+            <button
+              className="tl-delete-btn-sm"
+              onClick={e => { e.stopPropagation(); onDelete(); }}
+              title="Delete ticket"
+            >
+              <FiTrash2 size={13} /> Delete
             </button>
-            <button className="tl-book-btn-sm" onClick={e => { e.stopPropagation(); onClick(); }}>
+            <button
+              className="tl-book-btn-sm"
+              onClick={e => { e.stopPropagation(); onClick(); }}
+            >
               View Ticket
             </button>
           </div>
