@@ -148,11 +148,7 @@ export default function Navbar() {
         </div>
 
         {/* Links */}
-        <div className={styles.navLinks}>
-          <a href="/resourcelist" className={cls(styles.navLink, isActive("/resourcelist") && styles.navLinkActive)}>Resources</a>
-          <a href="/Booking"      className={cls(styles.navLink, isActive("/Booking")      && styles.navLinkActive)}>Bookings</a>
-          <a href="/ticket"       className={cls(styles.navLink, isActive("/ticket")       && styles.navLinkActive)}>Tickets</a>
-        </div>
+
 
         {/* Actions */}
         <div className={styles.navActions}>
