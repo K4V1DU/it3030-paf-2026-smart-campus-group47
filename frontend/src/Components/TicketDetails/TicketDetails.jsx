@@ -34,18 +34,18 @@ const CATEGORY_META = {
 };
 
 const PRIORITY_META = {
-  LOW:      { icon: <MdOutlineLowPriority />,              color: "#34d399", bg: "rgba(52,211,153,0.12)"  },
-  MEDIUM:   { icon: <MdOutlineHorizontalRule />,           color: "#fbbf24", bg: "rgba(251,191,36,0.12)"  },
-  HIGH:     { icon: <MdOutlineKeyboardDoubleArrowUp />,    color: "#f97316", bg: "rgba(249,115,22,0.12)"  },
-  CRITICAL: { icon: <MdOutlineFlashOn />,                  color: "#f43f5e", bg: "rgba(244,63,94,0.12)"   },
+  LOW:      { icon: <MdOutlineLowPriority />,              color: "#10b981", bg: "rgba(16,185,129,0.10)"  },
+  MEDIUM:   { icon: <MdOutlineHorizontalRule />,           color: "#f59e0b", bg: "rgba(245,158,11,0.10)"  },
+  HIGH:     { icon: <MdOutlineKeyboardDoubleArrowUp />,    color: "#f97316", bg: "rgba(249,115,22,0.10)"  },
+  CRITICAL: { icon: <MdOutlineFlashOn />,                  color: "#ef4444", bg: "rgba(239,68,68,0.10)"   },
 };
 
 const STATUS_META = {
-  OPEN:        { icon: <HiOutlineTicket />,             color: "#60a5fa", bg: "rgba(96,165,250,0.12)",   label: "Open"        },
-  IN_PROGRESS: { icon: <FiLoader />,                    color: "#a78bfa", bg: "rgba(167,139,250,0.12)",  label: "In Progress" },
-  RESOLVED:    { icon: <FiCheckCircle />,               color: "#34d399", bg: "rgba(52,211,153,0.12)",   label: "Resolved"    },
-  CLOSED:      { icon: <HiOutlineCheckBadge />,         color: "#94a3b8", bg: "rgba(148,163,184,0.1)",   label: "Closed"      },
-  REJECTED:    { icon: <FiXCircle />,                   color: "#f87171", bg: "rgba(248,113,113,0.12)",  label: "Rejected"    },
+  OPEN:        { icon: <HiOutlineTicket />,             color: "#3b82f6", bg: "rgba(59,130,246,0.10)",   label: "Open"        },
+  IN_PROGRESS: { icon: <FiLoader />,                    color: "#8b5cf6", bg: "rgba(139,92,246,0.10)",  label: "In Progress" },
+  RESOLVED:    { icon: <FiCheckCircle />,               color: "#10b981", bg: "rgba(16,185,129,0.10)",   label: "Resolved"    },
+  CLOSED:      { icon: <HiOutlineCheckBadge />,         color: "#6b7280", bg: "rgba(107,114,128,0.08)",  label: "Closed"      },
+  REJECTED:    { icon: <FiXCircle />,                   color: "#ef4444", bg: "rgba(239,68,68,0.10)",    label: "Rejected"    },
 };
 
 const fmt = (iso) => {
@@ -68,7 +68,7 @@ export default function TicketDetails() {
   const [ticket,    setTicket]    = useState(null);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState(null);
-  const [lightbox,  setLightbox]  = useState(null); // index of active image
+  const [lightbox,  setLightbox]  = useState(null);
   const [refreshing,setRefreshing]= useState(false);
 
   const fetchTicket = async (showRefresh = false) => {
@@ -90,14 +90,12 @@ export default function TicketDetails() {
 
   useEffect(() => { fetchTicket(); }, [id]);
 
-  // Keyboard close for lightbox
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") setLightbox(null); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // ── Loading ──────────────────────────────────────────────
   if (loading) {
     return (
       <div className="td-root">
@@ -111,7 +109,6 @@ export default function TicketDetails() {
     );
   }
 
-  // ── Error ────────────────────────────────────────────────
   if (error) {
     return (
       <div className="td-root">
@@ -135,20 +132,18 @@ export default function TicketDetails() {
   }
 
   const cat      = CATEGORY_META[ticket.category]  || { icon: <FaClipboardList />, label: ticket.category };
-  const pri      = PRIORITY_META[ticket.priority]  || { icon: null, color: "#94a3b8", bg: "transparent" };
-  const sta      = STATUS_META[ticket.status]       || { icon: null, color: "#94a3b8", bg: "transparent", label: ticket.status };
+  const pri      = PRIORITY_META[ticket.priority]  || { icon: null, color: "#6b7280", bg: "transparent" };
+  const sta      = STATUS_META[ticket.status]       || { icon: null, color: "#6b7280", bg: "transparent", label: ticket.status };
   const hasNotes = ticket.resolutionNotes?.trim();
   const hasRejection = ticket.rejectionReason?.trim();
   const hasImages    = ticket.attachments?.length > 0;
 
-  // ── Render ───────────────────────────────────────────────
   return (
     <div className="td-root">
       <div className="td-backdrop" />
 
       <Navbar />
 
-      {/* ── Breadcrumb / back bar ── */}
       <div className="td-topbar">
         <button className="td-back-btn" onClick={() => navigate(-1)}>
           <FiArrowLeft />
@@ -170,17 +165,13 @@ export default function TicketDetails() {
 
       <main className="td-main">
 
-        {/* ══ HERO STRIP ══════════════════════════════════ */}
         <div className="td-hero glass-panel">
-          {/* Left: title + meta row */}
           <div className="td-hero-left">
             <div className="td-hero-meta-row">
-              {/* Category badge */}
               <span className="td-cat-badge">
                 <span className="td-cat-icon">{cat.icon}</span>
                 {cat.label}
               </span>
-              {/* Priority badge */}
               <span
                 className="td-priority-badge"
                 style={{ color: pri.color, background: pri.bg, borderColor: `${pri.color}44` }}
@@ -207,7 +198,6 @@ export default function TicketDetails() {
             </div>
           </div>
 
-          {/* Right: big status pill */}
           <div className="td-hero-right">
             <div
               className="td-status-orb"
@@ -220,13 +210,10 @@ export default function TicketDetails() {
           </div>
         </div>
 
-        {/* ══ BODY GRID ═══════════════════════════════════ */}
         <div className="td-grid">
 
-          {/* ── Left column ── */}
           <div className="td-col-left">
 
-            {/* Description */}
             <section className="td-card glass-panel">
               <div className="td-card-header">
                 <HiOutlineClipboardDocumentList className="td-card-header-icon" />
@@ -235,7 +222,6 @@ export default function TicketDetails() {
               <p className="td-description">{ticket.description}</p>
             </section>
 
-            {/* Attachments */}
             {hasImages && (
               <section className="td-card glass-panel">
                 <div className="td-card-header">
@@ -261,7 +247,6 @@ export default function TicketDetails() {
               </section>
             )}
 
-            {/* Resolution Notes */}
             {hasNotes && (
               <section className="td-card glass-panel td-card-resolved">
                 <div className="td-card-header">
@@ -272,7 +257,6 @@ export default function TicketDetails() {
               </section>
             )}
 
-            {/* Rejection Reason */}
             {hasRejection && (
               <section className="td-card glass-panel td-card-rejected">
                 <div className="td-card-header">
@@ -285,10 +269,8 @@ export default function TicketDetails() {
 
           </div>
 
-          {/* ── Right column ── */}
           <div className="td-col-right">
 
-            {/* Details card */}
             <section className="td-card glass-panel">
               <div className="td-card-header">
                 <FiTag className="td-card-header-icon" />
@@ -363,7 +345,6 @@ export default function TicketDetails() {
               </ul>
             </section>
 
-            {/* Timeline card */}
             <section className="td-card glass-panel">
               <div className="td-card-header">
                 <FiClock className="td-card-header-icon" />
@@ -421,14 +402,12 @@ export default function TicketDetails() {
         </div>
       </main>
 
-      {/* ══ LIGHTBOX ════════════════════════════════════════ */}
       {lightbox !== null && (
         <div className="td-lightbox" onClick={() => setLightbox(null)}>
           <button className="td-lb-close" onClick={() => setLightbox(null)} aria-label="Close">
             <FiXCircle />
           </button>
 
-          {/* Prev */}
           {ticket.attachments.length > 1 && (
             <button
               className="td-lb-nav td-lb-prev"
@@ -446,7 +425,6 @@ export default function TicketDetails() {
             onClick={(e) => e.stopPropagation()}
           />
 
-          {/* Next */}
           {ticket.attachments.length > 1 && (
             <button
               className="td-lb-nav td-lb-next"
