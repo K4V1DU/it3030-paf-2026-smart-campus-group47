@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @CrossOrigin
@@ -21,8 +23,15 @@ public class AuthController {
     // POST http://localhost:8080/Auth/register
     // Body: { "name":"...", "email":"...", "password":"...", "role":"USER" }
     @PostMapping("register")
-    public ResponseEntity<AuthResponseDTO> register(@RequestBody RegisterRequestDTO request) {
-        return new ResponseEntity<>(authService.register(request), HttpStatus.CREATED);
+    public ResponseEntity<?> register(@RequestBody RegisterRequestDTO request) {
+        try {
+            return new ResponseEntity<>(authService.register(request), HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     // LOGIN
