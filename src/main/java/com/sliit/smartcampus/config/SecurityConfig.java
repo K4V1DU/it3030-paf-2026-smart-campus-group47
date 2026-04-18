@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .requestMatchers("/Resource/**").permitAll()
                         .requestMatchers("/Booking/**").permitAll()
                         .requestMatchers("/Ticket/**").permitAll()
+                        .requestMatchers("/Notification/**").permitAll()
                         // Everything else requires a valid JWT
                         .anyRequest().authenticated()
                 )
