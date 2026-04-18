@@ -35,8 +35,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/Auth/**").permitAll()
-                        .requestMatchers("/User/image/**").permitAll()
+                        .requestMatchers("/User/**").permitAll()
                         .requestMatchers("/Resource/**").permitAll()
+                        .requestMatchers("/Booking/**").permitAll()
+                        .requestMatchers("/Ticket/**").permitAll()
                         // Everything else requires a valid JWT
                         .anyRequest().authenticated()
                 )
