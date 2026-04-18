@@ -1,8 +1,14 @@
 import { useState } from "react";
-import styles from "./Navbar.module.css";
+import styles from "./TechnicianNavBar.module.css";
+
+// Helper to join class names cleanly
+const cls = (...classes) => classes.filter(Boolean).join(" ");
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const currentPath = window.location.pathname;
+
+  const isActive = (href) => currentPath === href || currentPath.startsWith(href);
 
   return (
     <nav className={styles.nav}>
@@ -12,12 +18,7 @@ export default function Navbar() {
           <span className={styles.navBrandName}>SmartCampus</span>
         </div>
 
-        <div className={styles.navLinks}>
-          <a href="#" className={`${styles.navLink} ${styles.navLinkActive}`}>Resources</a>
-          <a href="#" className={styles.navLink}>Bookings</a>
-          <a href="#" className={styles.navLink}>Schedule</a>
-          <a href="#" className={styles.navLink}>About</a>
-        </div>
+
 
         <div className={styles.navActions}>
           <button className={styles.loginBtn}>
@@ -46,11 +47,10 @@ export default function Navbar() {
 
       {menuOpen && (
         <div className={styles.mobileMenu}>
-          <a href="#" className={styles.mobileLink}>Resources</a>
-          <a href="#" className={styles.mobileLink}>Bookings</a>
-          <a href="#" className={styles.mobileLink}>Schedule</a>
-          <a href="#" className={styles.mobileLink}>About</a>
-          <a href="#" className={styles.mobileLink}>Login</a>
+          <a href="/resourcelist" className={cls(styles.mobileLink, isActive("/resourcelist") && styles.mobileLinkActive)}>Resources</a>
+          <a href="/Booking"      className={cls(styles.mobileLink, isActive("/Booking") && styles.mobileLinkActive)}>Bookings</a>
+          <a href="/ticket"       className={cls(styles.mobileLink, isActive("/ticket") && styles.mobileLinkActive)}>Tickets</a>
+          <a href="#"             className={styles.mobileLink}>Login</a>
         </div>
       )}
     </nav>

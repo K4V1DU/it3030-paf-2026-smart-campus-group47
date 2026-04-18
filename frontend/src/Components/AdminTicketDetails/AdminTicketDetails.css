@@ -1,0 +1,457 @@
+/* ─────────────────────────────────────────────────────────────
+   AdminTicketDetails.css  —  Light Theme
+───────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Tokens ── */
+:root {
+  --bg-page:       #f0f2f5;
+  --bg-card:       #ffffff;
+  --bg-subtle:     #f8fafc;
+  --border:        #e8ecf0;
+  --border-soft:   #f1f5f9;
+  --text-primary:  #0f172a;
+  --text-secondary:#475569;
+  --text-muted:    #94a3b8;
+  --accent:        #1d4ed8;
+  --accent-hover:  #2563eb;
+  --accent-soft:   #eff6ff;
+  --error:         #dc2626;
+  --success:       #16a34a;
+  --radius-lg:     18px;
+  --radius-md:     12px;
+  --radius-sm:     8px;
+  --shadow-card:   0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05);
+  --shadow-hover:  0 4px 20px rgba(0,0,0,0.1);
+  --font-main:     'Inter', system-ui, sans-serif;
+  --font-mono:     'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Root ── */
+.atdd-root {
+  min-height: 100vh;
+  font-family: var(--font-main);
+  color: var(--text-primary);
+  background: var(--bg-page);
+}
+
+/* ── Card ── */
+.atdd-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s;
+}
+
+/* ── Loading / Error ── */
+.atdd-center-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 65vh;
+  gap: 1rem;
+  text-align: center;
+  padding: 2rem;
+}
+.atdd-spinner {
+  width: 38px; height: 38px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: atdd-spin 0.75s linear infinite;
+}
+@keyframes atdd-spin { to { transform: rotate(360deg); } }
+.atdd-err-icon   { font-size: 2.4rem; color: var(--error); display: flex; }
+.atdd-state-title{ font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.atdd-state-text { font-size: 0.85rem; color: var(--text-secondary); }
+
+/* ── Main ── */
+.atdd-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Topbar ── */
+.atdd-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.atdd-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.45rem 1rem 0.45rem 0.8rem;
+  border-radius: 100px;
+  font-family: var(--font-main);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: all 0.18s;
+}
+.atdd-back-btn:hover {
+  color: var(--text-primary);
+  border-color: #c7d2e0;
+  box-shadow: var(--shadow-hover);
+}
+.atdd-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* ── Hero ── */
+.atdd-hero { overflow: hidden; animation: atdd-fadeUp 0.4s ease both; }
+
+/* Colored category banner */
+.atdd-hero-banner {
+  position: relative;
+  height: 90px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 1.8rem 14px;
+  overflow: hidden;
+}
+.atdd-hero-banner-icon {
+  position: absolute; right: 1.8rem; top: 50%;
+  transform: translateY(-50%);
+  font-size: 3.6rem; opacity: 0.15; color: #fff; display: flex;
+}
+.atdd-hero-cat-label {
+  display: inline-block;
+  background: rgba(0,0,0,0.45); color: #fff;
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; padding: 4px 12px;
+  border-radius: 6px; backdrop-filter: blur(6px);
+}
+
+.atdd-hero-body {
+  padding: 1.4rem 1.8rem;
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+.atdd-hero-meta-row {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+}
+.atdd-hero-id {
+  font-family: var(--font-mono);
+  font-size: 0.75rem; color: var(--text-muted);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 0.2rem 0.6rem; border-radius: 6px;
+}
+.atdd-hero-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.atdd-hero-title {
+  font-size: clamp(1.25rem, 3vw, 1.85rem);
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2; letter-spacing: -0.025em;
+}
+.atdd-hero-info-row {
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+}
+.atdd-info-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.76rem; color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 0.28rem 0.75rem; border-radius: 100px;
+}
+.atdd-info-chip svg { color: var(--text-muted); flex-shrink: 0; }
+
+/* ── Layout ── */
+.atdd-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 1024px) {
+  .atdd-layout { grid-template-columns: 1fr; }
+  .atdd-col-side { display: contents; }
+}
+.atdd-col-main { display: flex; flex-direction: column; gap: 1.25rem; }
+.atdd-col-side  { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* ── Section ── */
+.atdd-section {
+  padding: 1.4rem 1.6rem;
+  animation: atdd-fadeUp 0.4s ease both;
+}
+.atdd-section-header {
+  display: flex; align-items: center; gap: 0.55rem;
+  margin-bottom: 1.1rem; padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+.atdd-section-icon { font-size: 1rem; color: var(--accent); flex-shrink: 0; }
+.atdd-section-title {
+  font-size: 0.88rem; font-weight: 700; color: var(--text-primary);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.atdd-count-badge {
+  background: var(--accent-soft); color: var(--accent);
+  font-size: 0.68rem; font-weight: 700;
+  width: 20px; height: 20px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+}
+
+/* Description */
+.atdd-desc-text {
+  font-size: 0.9rem; line-height: 1.8;
+  color: var(--text-secondary); white-space: pre-wrap;
+}
+.atdd-dim { color: var(--text-muted); font-style: italic; }
+
+/* ── Badge ── */
+.atdd-badge {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 100px; border: 1px solid;
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
+}
+
+/* ── Attachments ── */
+.atdd-attachments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+.atdd-attach-thumb {
+  position: relative; border: 1px solid var(--border);
+  border-radius: var(--radius-md); overflow: hidden;
+  aspect-ratio: 4/3; cursor: pointer; background: var(--bg-subtle);
+  padding: 0; transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.atdd-attach-thumb:hover {
+  border-color: var(--accent); transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(29,78,216,0.15);
+}
+.atdd-attach-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.atdd-attach-overlay {
+  position: absolute; inset: 0;
+  background: rgba(15,23,42,0.55);
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.4rem; color: #fff;
+  font-size: 0.78rem; font-weight: 600;
+  opacity: 0; transition: opacity 0.2s;
+}
+.atdd-attach-thumb:hover .atdd-attach-overlay { opacity: 1; }
+
+/* ── Status list ── */
+.atdd-status-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.atdd-status-btn {
+  display: flex; align-items: center; gap: 0.55rem;
+  background: var(--bg-subtle);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-main);
+  font-size: 0.83rem; font-weight: 500;
+  padding: 0.6rem 0.9rem; cursor: pointer;
+  transition: all 0.18s; text-align: left;
+}
+.atdd-status-btn:not(:disabled):hover {
+  background: #fff;
+  border-color: #c7d2e0;
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.atdd-status-btn:disabled { cursor: default; }
+.atdd-status-btn-active {
+  background: var(--sb-bg, #eff6ff) !important;
+  border-color: var(--sb-border, #bfdbfe) !important;
+  color: var(--sb-color, #2563eb) !important;
+  font-weight: 700;
+}
+.atdd-active-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; margin-left: auto;
+  flex-shrink: 0; opacity: 0.75;
+}
+
+/* ── Info list ── */
+.atdd-info-list { display: flex; flex-direction: column; gap: 0; }
+.atdd-info-row {
+  display: flex; justify-content: space-between;
+  align-items: baseline; gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.atdd-info-row:last-child { border-bottom: none; }
+.atdd-info-label {
+  font-size: 0.72rem; font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0;
+}
+.atdd-info-value {
+  font-size: 0.82rem; color: var(--text-secondary);
+  text-align: right; word-break: break-all;
+}
+.atdd-mono { font-family: var(--font-mono); font-size: 0.76rem; }
+
+/* ── Assign widget ── */
+.atdd-assign-wrap { display: flex; flex-direction: column; gap: 0.7rem; }
+.atdd-current-assignee {
+  display: flex; align-items: center; gap: 0.45rem;
+  font-size: 0.8rem; color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.85rem; border-radius: var(--radius-sm);
+}
+.atdd-current-assignee svg { color: var(--accent); flex-shrink: 0; }
+.atdd-current-assignee strong { color: var(--text-primary); font-weight: 600; }
+
+/* ── Select ── */
+.atdd-select-wrap { position: relative; display: flex; align-items: center; }
+.atdd-select {
+  width: 100%; appearance: none; -webkit-appearance: none;
+  background: var(--bg-subtle);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  font-size: 0.85rem; font-weight: 500;
+  padding: 0.65rem 2.2rem 0.65rem 0.9rem;
+  cursor: pointer; outline: none;
+  transition: all 0.18s;
+}
+.atdd-select:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(29,78,216,0.1);
+}
+.atdd-select:hover { border-color: #c7d2e0; background: #fff; }
+.atdd-select option { background: #fff; color: var(--text-primary); }
+.atdd-select-chevron {
+  position: absolute; right: 0.75rem;
+  pointer-events: none; color: var(--text-muted); font-size: 0.9rem;
+}
+
+.atdd-assign-btn { width: 100%; justify-content: center; }
+
+/* ── Buttons ── */
+.atdd-btn-primary {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  background: var(--accent); color: #fff; border: none;
+  padding: 0.6rem 1.4rem; border-radius: var(--radius-md);
+  font-family: var(--font-main); font-size: 0.88rem; font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(29,78,216,0.25);
+  transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
+}
+.atdd-btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(29,78,216,0.35);
+}
+.atdd-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.atdd-btn-secondary {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  background: var(--bg-card); border: 1.5px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.58rem 1.2rem; border-radius: var(--radius-md);
+  font-family: var(--font-main); font-size: 0.88rem; font-weight: 500;
+  cursor: pointer; box-shadow: var(--shadow-card);
+  transition: all 0.18s;
+}
+.atdd-btn-secondary:hover {
+  border-color: #c7d2e0; color: var(--text-primary);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Spinner inside button */
+.atdd-btn-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: atdd-spin 0.7s linear infinite; flex-shrink: 0;
+}
+
+/* ── Toast ── */
+.atdd-toast {
+  position: fixed; bottom: 2rem; left: 50%;
+  transform: translateX(-50%); z-index: 9999;
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  padding: 0.75rem 1.4rem; border-radius: 100px;
+  font-family: var(--font-main); font-size: 0.85rem; font-weight: 600;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  animation: atdd-toastIn 0.3s ease both; white-space: nowrap;
+  backdrop-filter: blur(10px);
+}
+.atdd-toast-success {
+  background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;
+}
+.atdd-toast-error {
+  background: #fef2f2; border: 1px solid #fecaca; color: var(--error);
+}
+@keyframes atdd-toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── Lightbox ── */
+.atdd-lightbox {
+  position: fixed; inset: 0; z-index: 9500;
+  background: rgba(15,23,42,0.85);
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem; cursor: zoom-out;
+  animation: atdd-fadeIn 0.2s ease both;
+}
+.atdd-lightbox img {
+  max-width: 90vw; max-height: 85vh; object-fit: contain;
+  border-radius: var(--radius-md); box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  cursor: default; animation: atdd-fadeUp 0.25s ease both;
+}
+.atdd-lightbox-close {
+  position: absolute; top: 1.5rem; right: 1.5rem;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff; width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; cursor: pointer; transition: all 0.18s;
+}
+.atdd-lightbox-close:hover { background: rgba(255,255,255,0.25); }
+
+/* ── Animations ── */
+@keyframes atdd-fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes atdd-fadeIn {
+  from { opacity: 0; } to { opacity: 1; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .atdd-main    { padding: 1.25rem 1rem 4rem; }
+  .atdd-section { padding: 1.1rem 1.2rem; }
+  .atdd-hero-body { padding: 1.1rem 1.3rem; }
+}
+@media (max-width: 600px) {
+  .atdd-hero-title { font-size: 1.2rem; }
+  .atdd-layout { gap: 1rem; }
+}
