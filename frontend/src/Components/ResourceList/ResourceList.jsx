@@ -8,8 +8,21 @@ import styles from "./ResourceList.module.css";
 import Navbar from "../NavBar/UserNavBar/UserNavbar";
 
 const BASE_URL        = "http://localhost:8080";
-const CURRENT_USER_ID = 1;
 const DEFAULT_IMAGE   = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80";
+
+// Get current logged user ID from localStorage
+const getCurrentUserId = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      return user.id;
+    } catch (e) {
+      console.error('Error parsing user from localStorage:', e);
+    }
+  }
+  return null;
+};
 const ITEM_H          = 48;
 
 const STATUS_META = {
@@ -388,8 +401,17 @@ export default function ResourceList() {
     }
 
     setSubmitting(true); setBookingMsg(null);
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId) {
+      setBookingMsg({
+        type: "error",
+        text: "User not logged in. Please log in again.",
+      });
+      setSubmitting(false);
+      return;
+    }
     const payload = {
-      userId:            CURRENT_USER_ID,
+      userId:            currentUserId,
       resourceId:        selected.id,
       bookingDate:       form.bookingDate,
       startTime:         form.startTime + ":00",
