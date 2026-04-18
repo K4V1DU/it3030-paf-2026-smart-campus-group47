@@ -59,7 +59,7 @@ export default function Register() {
         role:     data.role,
         imageUrl: data.imageUrl,
       }));
-      navigate('/dashboard');
+      navigate('/home');
     } catch (err) {
       setError(err.message);
     } finally {
