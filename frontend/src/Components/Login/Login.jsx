@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styles from './Login.module.css';
 
@@ -10,6 +10,15 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // ── URL error param check (Google OAuth error) ────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get('error');
+    if (err) {
+      setError(decodeURIComponent(err));
+    }
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -44,16 +53,13 @@ export default function Login() {
       // Role based navigation
       switch (data.role) {
         case 'ADMIN':
-          navigate('/admin/dashboard');
-          break;
-        case 'MANAGER':
-          navigate('/manager/dashboard');
+          navigate('/Admin/Tickets');
           break;
         case 'TECHNICIAN':
-          navigate('/technician/dashboard');
+          navigate('/TicketReview');
           break;
         default:
-          navigate('/home'); // USER
+          navigate('/home');
       }
 
     } catch (err) {
@@ -64,7 +70,8 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${BASE_URL}/oauth2/authorization/google`;
+      document.cookie = 'oauth2_auth_request=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      window.location.href = 'http://localhost:8080/oauth2/authorization/google';
   };
 
   return (
