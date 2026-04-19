@@ -24,6 +24,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Autowired
     private UserRepo userRepo;
 
+    
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/oauth2/")
+                || path.startsWith("/login/oauth2/")
+                || path.startsWith("/login");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest  request,
                                     HttpServletResponse response,
