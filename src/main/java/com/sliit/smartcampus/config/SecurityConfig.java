@@ -40,7 +40,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/Auth/**",
                                 "/User/image/**",
-                                "/Resource/**",
+                                "/Notification/**",
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/login/**"
