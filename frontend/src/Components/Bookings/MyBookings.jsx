@@ -8,7 +8,20 @@ import styles from "./MyBookings.module.css";
 import Navbar from "../NavBar/UserNavBar/UserNavbar";
 
 const BASE_URL        = "http://localhost:8080";
-const CURRENT_USER_ID = 1;
+
+// Get current logged user ID from localStorage
+const getCurrentUserId = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      return user.id;
+    } catch (e) {
+      console.error('Error parsing user from localStorage:', e);
+    }
+  }
+  return null;
+};
 
 const STATUS_META = {
   PENDING:   { label: "Pending",   cls: "pending",   Icon: FiClock       },
@@ -76,7 +89,13 @@ export default function MyBookings() {
 
   const fetchBookings = () => {
     setLoading(true);
-    fetch(`${BASE_URL}/Booking/getBookingsByUser/${CURRENT_USER_ID}`)
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId) {
+      setError("User not logged in. Please log in again.");
+      setLoading(false);
+      return;
+    }
+    fetch(`${BASE_URL}/Booking/getBookingsByUser/${currentUserId}`)
       .then(r => { if (!r.ok) throw new Error("Failed to fetch bookings"); return r.json(); })
       .then(d => { setBookings(d); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });

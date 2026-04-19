@@ -1,44 +1,72 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Navbar from "../NavBar/UserNavBar/UserNavbar";
 import "./Ticketraise.css";
 
-// react-icons
 import { FaTools, FaBuilding, FaLaptop, FaChair, FaClipboardList } from "react-icons/fa";
 import { FaArrowDown, FaMinus, FaArrowUp, FaBolt }                  from "react-icons/fa";
-import { FiUploadCloud, FiX, FiSend, FiCheckCircle, FiAlertCircle, FiRotateCcw } from "react-icons/fi";
-import { MdOutlineAttachFile }                                       from "react-icons/md";
+import {
+  FiUploadCloud, FiX, FiSend, FiCheckCircle,
+  FiAlertCircle, FiRotateCcw, FiUser, FiMail,
+  FiMapPin, FiTag, FiFileText, FiAlertTriangle,
+} from "react-icons/fi";
 
-// ── Data maps ─────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────
+const BASE_URL = "http://localhost:8080";
+
 const CATEGORIES = ["EQUIPMENT", "FACILITY", "IT", "FURNITURE", "OTHER"];
 const PRIORITIES  = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
-const CATEGORY_ICONS = {
-  EQUIPMENT: <FaTools />,
-  FACILITY:  <FaBuilding />,
-  IT:        <FaLaptop />,
-  FURNITURE: <FaChair />,
-  OTHER:     <FaClipboardList />,
+const CATEGORY_META = {
+  EQUIPMENT: { Icon: FaTools,         label: "Equipment", color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
+  FACILITY:  { Icon: FaBuilding,      label: "Facility",  color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
+  IT:        { Icon: FaLaptop,        label: "IT",        color: "#6366f1", bg: "#eef2ff", border: "#c7d2fe" },
+  FURNITURE: { Icon: FaChair,         label: "Furniture", color: "#d97706", bg: "#fffbeb", border: "#fde68a" },
+  OTHER:     { Icon: FaClipboardList, label: "Other",     color: "#64748b", bg: "#f8fafc", border: "#e2e8f0" },
 };
 
 const PRIORITY_META = {
-  LOW:      { color: "#34d399", icon: <FaArrowDown /> },
-  MEDIUM:   { color: "#fbbf24", icon: <FaMinus />    },
-  HIGH:     { color: "#f97316", icon: <FaArrowUp />  },
-  CRITICAL: { color: "#f43f5e", icon: <FaBolt />     },
+  LOW:      { label: "Low",      color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", Icon: FaArrowDown },
+  MEDIUM:   { label: "Medium",   color: "#d97706", bg: "#fffbeb", border: "#fde68a", Icon: FaMinus     },
+  HIGH:     { label: "High",     color: "#ea580c", bg: "#fff7ed", border: "#fed7aa", Icon: FaArrowUp   },
+  CRITICAL: { label: "Critical", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", Icon: FaBolt      },
 };
 
-// ─────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────
+/** Read the user object that Navbar stores in localStorage. */
+function getStoredUser() {
+  try {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
+/** Build a display string for "Reported By" from the user object. */
+function buildReportedBy(user) {
+  if (!user) return "";
+  const name  = user.name || "";
+  const email = user.email || "";
+  if (name && email) return `${name} (${email})`;
+  return name || email;
+}
+
+// ── Component ──────────────────────────────────────────────────
 export default function TicketRaise() {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    category: "",
-    priority: "",
-    location: "",
-    reportedBy: "",
-    contactDetails: "",
+  // ── Load current user from localStorage (same source as Navbar) ──
+  const [currentUser] = useState(() => getStoredUser());
+
+  const initForm = (user) => ({
+    title:          "",
+    description:    "",
+    category:       "",
+    priority:       "",
+    location:       "",
+    reportedBy:     buildReportedBy(user),   // ← pre-filled from stored user
+    contactDetails: user?.email || "",
   });
+
+  const [form,       setForm]       = useState(() => initForm(currentUser));
   const [attachments, setAttachments] = useState([]);
   const [errors,      setErrors]      = useState({});
   const [submitting,  setSubmitting]  = useState(false);
@@ -46,12 +74,11 @@ export default function TicketRaise() {
   const [dragOver,    setDragOver]    = useState(false);
   const fileRef = useRef();
 
-  // ── Handlers ──────────────────────────────────────────────
-
+  // ── Form handlers ────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((p)   => ({ ...p, [name]: value }));
-    setErrors((p) => ({ ...p, [name]: "" }));
+    setForm(p   => ({ ...p, [name]: value }));
+    setErrors(p => ({ ...p, [name]: "" }));
   };
 
   const readFile = (file) =>
@@ -67,12 +94,12 @@ export default function TicketRaise() {
     const remaining = 3 - attachments.length;
     const toAdd     = Array.from(files).slice(0, remaining);
     if (!toAdd.length) return;
-    const results = await Promise.all(toAdd.map(readFile).map((p) => p.catch((e) => ({ error: e }))));
-    setAttachments((p) => [...p, ...results.filter((r) => !r.error)]);
+    const results = await Promise.all(toAdd.map(f => readFile(f).catch(e => ({ error: e }))));
+    setAttachments(p => [...p, ...results.filter(r => !r.error)]);
   };
 
   const removeAttachment = (idx) =>
-    setAttachments((p) => p.filter((_, i) => i !== idx));
+    setAttachments(p => p.filter((_, i) => i !== idx));
 
   const validate = () => {
     const e = {};
@@ -91,10 +118,10 @@ export default function TicketRaise() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
     setSubmitting(true);
-    const payload = { ...form, attachments: attachments.map((a) => a.base64) };
+    const payload = { ...form, attachments: attachments.map(a => a.base64) };
 
     try {
-      const res = await fetch("http://localhost:8080/Ticket/create", {
+      const res = await fetch(`${BASE_URL}/Ticket/create`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(payload),
@@ -110,173 +137,290 @@ export default function TicketRaise() {
 
   const resetForm = () => {
     setSubmitted(false);
-    setForm({ title:"", description:"", category:"", priority:"", location:"", reportedBy:"", contactDetails:"" });
+    setForm(initForm(currentUser));
     setAttachments([]);
     setErrors({});
   };
 
-  // ── Success screen ────────────────────────────────────────
+  // ── Avatar helper ────────────────────────────────────────────
+  const avatarInitial = currentUser?.name
+    ? currentUser.name[0].toUpperCase()
+    : "U";
+
+  const avatarSrc = currentUser?.imageUrl
+    ? `${BASE_URL}/${currentUser.imageUrl}`
+    : null;
+
+  // ── Success screen ───────────────────────────────────────────
   if (submitted) {
     return (
-      <div className="tr-root">
-        <div className="tr-backdrop" />
+      <div className="tr-page">
         <Navbar />
-        <div className="tr-success-wrapper">
-          <div className="tr-success-card glass-panel">
-            <div className="tr-success-icon"><FiCheckCircle /></div>
-            <h2>Ticket Submitted</h2>
-            <p>Your report has been received. Our team will review it shortly.</p>
-            <button className="tr-btn-primary" onClick={resetForm}>
-              <FiRotateCcw />
-              Raise Another
-            </button>
+        <div className="tr-success-wrap">
+          <div className="tr-success-card">
+            <div className="tr-success-ring">
+              <FiCheckCircle className="tr-success-icon" />
+            </div>
+            <h2>Ticket Submitted!</h2>
+            <p>Your report has been received. Our maintenance team will review it shortly.</p>
+            <div className="tr-success-actions">
+              <button className="tr-btn-secondary" onClick={() => window.history.back()}>
+                Back to Tickets
+              </button>
+              <button className="tr-btn-primary" onClick={resetForm}>
+                <FiRotateCcw /> Raise Another
+              </button>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // ── Main form ─────────────────────────────────────────────
+  // ── Main form ────────────────────────────────────────────────
   return (
-    <div className="tr-root">
-      <div className="tr-backdrop" />
-
+    <div className="tr-page">
       <Navbar />
 
       {/* Hero */}
-      <header className="tr-hero">
-        <p className="tr-hero-eyebrow">SLIIT SMART CAMPUS</p>
-        <h1 className="tr-hero-title">Raise a Ticket</h1>
-        <p className="tr-hero-sub">
-          Report an issue with campus facilities, equipment, or services.
-        </p>
-      </header>
+      <div className="tr-hero">
+        <div className="tr-hero-inner">
+          <p className="tr-eyebrow">SLIIT SMART CAMPUS</p>
+          <h1 className="tr-hero-title">Raise a Ticket</h1>
+          <p className="tr-hero-sub">
+            Report an issue with campus facilities, equipment, or services.
+          </p>
+        </div>
+      </div>
 
-      {/* Form card */}
+      {/* Form */}
       <main className="tr-main">
-        <form className="tr-form glass-panel" onSubmit={handleSubmit} noValidate>
+        <form className="tr-form" onSubmit={handleSubmit} noValidate>
 
-          {/* Title */}
-          <div className="tr-field-full">
-            <label className="tr-label">Issue Title <span className="tr-req">*</span></label>
-            <input
-              className={`tr-input ${errors.title ? "tr-input-error" : ""}`}
-              name="title"
-              placeholder="Briefly describe the issue…"
-              value={form.title}
-              onChange={handleChange}
-            />
-            {errors.title && <span className="tr-error"><FiAlertCircle /> {errors.title}</span>}
-          </div>
-
-          {/* Description */}
-          <div className="tr-field-full">
-            <label className="tr-label">Description <span className="tr-req">*</span></label>
-            <textarea
-              className={`tr-textarea ${errors.description ? "tr-input-error" : ""}`}
-              name="description"
-              placeholder="Provide full details of the problem…"
-              rows={4}
-              value={form.description}
-              onChange={handleChange}
-            />
-            {errors.description && <span className="tr-error"><FiAlertCircle /> {errors.description}</span>}
-          </div>
-
-          {/* Category + Priority */}
-          <div className="tr-row-2">
-            <div className="tr-field">
-              <label className="tr-label">Category <span className="tr-req">*</span></label>
-              <div className="tr-pill-group">
-                {CATEGORIES.map((c) => (
-                  <button
-                    type="button" key={c}
-                    className={`tr-pill ${form.category === c ? "tr-pill-active" : ""}`}
-                    onClick={() => { setForm((p) => ({ ...p, category: c })); setErrors((p) => ({ ...p, category: "" })); }}
-                  >
-                    <span className="tr-pill-icon">{CATEGORY_ICONS[c]}</span>
-                    {c}
-                  </button>
-                ))}
+          {/* ── Reporter banner (auto-filled from stored user) ── */}
+          {currentUser && (
+            <div className="tr-reporter-banner">
+              <div className="tr-reporter-avatar">
+                {avatarSrc
+                  ? <img src={avatarSrc} alt="avatar"
+                      onError={e => { e.target.style.display = "none"; }} />
+                  : <span>{avatarInitial}</span>
+                }
               </div>
-              {errors.category && <span className="tr-error"><FiAlertCircle /> {errors.category}</span>}
+              <div className="tr-reporter-info">
+                <p className="tr-reporter-name">{currentUser.name || "Unknown User"}</p>
+                {currentUser.email && (
+                  <p className="tr-reporter-email">
+                    <FiMail size={11} /> {currentUser.email}
+                  </p>
+                )}
+                {currentUser.role && (
+                  <p className="tr-reporter-role">{currentUser.role}</p>
+                )}
+              </div>
+              <span className="tr-reporter-tag">
+                <FiUser size={11} /> Submitting as you
+              </span>
+            </div>
+          )}
+
+          {/* ── Step 1: Core info ── */}
+          <div className="tr-section">
+            <div className="tr-section-head">
+              <span className="tr-step-num">1</span>
+              <div>
+                <h2 className="tr-section-title">Issue Details</h2>
+                <p className="tr-section-sub">Describe the problem clearly so it can be resolved quickly.</p>
+              </div>
             </div>
 
-            <div className="tr-field">
-              <label className="tr-label">Priority <span className="tr-req">*</span></label>
-              <div className="tr-pill-group">
-                {PRIORITIES.map((p) => (
-                  <button
-                    type="button" key={p}
-                    style={form.priority === p ? { "--pill-accent": PRIORITY_META[p].color } : {}}
-                    className={`tr-pill tr-pill-priority ${form.priority === p ? "tr-pill-active tr-pill-priority-active" : ""}`}
-                    onClick={() => { setForm((prev) => ({ ...prev, priority: p })); setErrors((prev) => ({ ...prev, priority: "" })); }}
-                  >
-                    <span className="tr-pill-icon" style={{ color: PRIORITY_META[p].color }}>
-                      {PRIORITY_META[p].icon}
+            <div className="tr-field-full">
+              <label className="tr-label">
+                Issue Title <span className="tr-req">*</span>
+              </label>
+              <input
+                className={`tr-input ${errors.title ? "tr-input-err" : ""}`}
+                name="title"
+                placeholder="e.g. Broken projector in Lab 3"
+                value={form.title}
+                onChange={handleChange}
+              />
+              {errors.title && <FieldError msg={errors.title} />}
+            </div>
+
+            <div className="tr-field-full">
+              <label className="tr-label">
+                Description <span className="tr-req">*</span>
+              </label>
+              <textarea
+                className={`tr-textarea ${errors.description ? "tr-input-err" : ""}`}
+                name="description"
+                placeholder="Provide full details — what is broken, since when, how it impacts work…"
+                rows={4}
+                value={form.description}
+                onChange={handleChange}
+              />
+              {errors.description && <FieldError msg={errors.description} />}
+            </div>
+          </div>
+
+          {/* ── Step 2: Category + Priority ── */}
+          <div className="tr-section">
+            <div className="tr-section-head">
+              <span className="tr-step-num">2</span>
+              <div>
+                <h2 className="tr-section-title">Classify</h2>
+                <p className="tr-section-sub">Help us route your ticket to the right team.</p>
+              </div>
+            </div>
+
+            <div className="tr-row-2">
+              {/* Category */}
+              <div className="tr-field">
+                <label className="tr-label">
+                  <FiTag size={12} /> Category <span className="tr-req">*</span>
+                </label>
+                <div className="tr-tile-group">
+                  {CATEGORIES.map(c => {
+                    const m = CATEGORY_META[c];
+                    const active = form.category === c;
+                    return (
+                      <button
+                        type="button" key={c}
+                        className={`tr-tile ${active ? "tr-tile-active" : ""}`}
+                        style={active ? {
+                          "--tile-color":  m.color,
+                          "--tile-bg":     m.bg,
+                          "--tile-border": m.border,
+                        } : {}}
+                        onClick={() => {
+                          setForm(p => ({ ...p, category: c }));
+                          setErrors(p => ({ ...p, category: "" }));
+                        }}
+                      >
+                        <m.Icon className="tr-tile-icon" />
+                        <span>{m.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.category && <FieldError msg={errors.category} />}
+              </div>
+
+              {/* Priority */}
+              <div className="tr-field">
+                <label className="tr-label">
+                  <FiAlertTriangle size={12} /> Priority <span className="tr-req">*</span>
+                </label>
+                <div className="tr-tile-group tr-tile-group-prio">
+                  {PRIORITIES.map(p => {
+                    const m = PRIORITY_META[p];
+                    const active = form.priority === p;
+                    return (
+                      <button
+                        type="button" key={p}
+                        className={`tr-tile tr-tile-prio ${active ? "tr-tile-active" : ""}`}
+                        style={active ? {
+                          "--tile-color":  m.color,
+                          "--tile-bg":     m.bg,
+                          "--tile-border": m.border,
+                        } : {}}
+                        onClick={() => {
+                          setForm(prev => ({ ...prev, priority: p }));
+                          setErrors(prev => ({ ...prev, priority: "" }));
+                        }}
+                      >
+                        <m.Icon className="tr-tile-icon" style={{ color: m.color }} />
+                        <span>{m.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.priority && <FieldError msg={errors.priority} />}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Step 3: Location + Reporter ── */}
+          <div className="tr-section">
+            <div className="tr-section-head">
+              <span className="tr-step-num">3</span>
+              <div>
+                <h2 className="tr-section-title">Contact & Location</h2>
+                <p className="tr-section-sub">Where is the issue and who should we follow up with?</p>
+              </div>
+            </div>
+
+            <div className="tr-row-2">
+              <div className="tr-field">
+                <label className="tr-label">
+                  <FiMapPin size={12} /> Location <span className="tr-req">*</span>
+                </label>
+                <input
+                  className={`tr-input ${errors.location ? "tr-input-err" : ""}`}
+                  name="location"
+                  placeholder="e.g. Block A – Lab 3, Level 2"
+                  value={form.location}
+                  onChange={handleChange}
+                />
+                {errors.location && <FieldError msg={errors.location} />}
+              </div>
+
+              <div className="tr-field">
+                <label className="tr-label">
+                  <FiUser size={12} /> Reported By <span className="tr-req">*</span>
+                </label>
+                <div className="tr-input-wrap">
+                  <input
+                    className={`tr-input ${errors.reportedBy ? "tr-input-err" : ""} ${currentUser ? "tr-input-readonly" : ""}`}
+                    name="reportedBy"
+                    placeholder="Your name or email"
+                    value={form.reportedBy}
+                    onChange={handleChange}
+                    readOnly={!!currentUser}
+                  />
+                  {currentUser && (
+                    <span className="tr-input-locked" title="Filled from your account">
+                      <FiCheckCircle />
                     </span>
-                    {p}
-                  </button>
-                ))}
+                  )}
+                </div>
+                {errors.reportedBy && <FieldError msg={errors.reportedBy} />}
               </div>
-              {errors.priority && <span className="tr-error"><FiAlertCircle /> {errors.priority}</span>}
             </div>
-          </div>
 
-          {/* Location + Reported By */}
-          <div className="tr-row-2">
-            <div className="tr-field">
-              <label className="tr-label">Location <span className="tr-req">*</span></label>
+            <div className="tr-field-full">
+              <label className="tr-label">
+                Contact Details <span className="tr-opt">(optional)</span>
+              </label>
               <input
-                className={`tr-input ${errors.location ? "tr-input-error" : ""}`}
-                name="location"
-                placeholder="e.g. Block A, Lab 3"
-                value={form.location}
+                className={`tr-input ${currentUser ? "tr-input-readonly" : ""}`}
+                name="contactDetails"
+                placeholder="Phone number or preferred contact method"
+                value={form.contactDetails}
                 onChange={handleChange}
+                readOnly={!!currentUser?.email}
               />
-              {errors.location && <span className="tr-error"><FiAlertCircle /> {errors.location}</span>}
-            </div>
-            <div className="tr-field">
-              <label className="tr-label">Reported By <span className="tr-req">*</span></label>
-              <input
-                className={`tr-input ${errors.reportedBy ? "tr-input-error" : ""}`}
-                name="reportedBy"
-                placeholder="Your name or email"
-                value={form.reportedBy}
-                onChange={handleChange}
-              />
-              {errors.reportedBy && <span className="tr-error"><FiAlertCircle /> {errors.reportedBy}</span>}
             </div>
           </div>
 
-          {/* Contact */}
-          <div className="tr-field-full">
-            <label className="tr-label">
-              Contact Details <span className="tr-opt">(optional)</span>
-            </label>
-            <input
-              className="tr-input"
-              name="contactDetails"
-              placeholder="Phone number or preferred contact method"
-              value={form.contactDetails}
-              onChange={handleChange}
-            />
-          </div>
-
-          {/* Attachments */}
-          <div className="tr-field-full">
-            <label className="tr-label">
-              <MdOutlineAttachFile className="tr-label-icon" />
-              Attachments <span className="tr-opt">(up to 3 images)</span>
-            </label>
+          {/* ── Step 4: Attachments ── */}
+          <div className="tr-section">
+            <div className="tr-section-head">
+              <span className="tr-step-num">4</span>
+              <div>
+                <h2 className="tr-section-title">Attachments</h2>
+                <p className="tr-section-sub">Attach up to 3 photos of the issue (optional).</p>
+              </div>
+            </div>
 
             {attachments.length < 3 && (
               <div
                 className={`tr-dropzone ${dragOver ? "tr-dropzone-over" : ""}`}
                 onClick={() => fileRef.current.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+                onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
               >
                 <input
                   ref={fileRef}
@@ -284,13 +428,13 @@ export default function TicketRaise() {
                   accept="image/*"
                   multiple
                   style={{ display: "none" }}
-                  onChange={(e) => handleFiles(e.target.files)}
+                  onChange={e => handleFiles(e.target.files)}
                 />
-                <div className="tr-dropzone-icon"><FiUploadCloud /></div>
-                <p className="tr-dropzone-text">
+                <FiUploadCloud className="tr-drop-icon" />
+                <p className="tr-drop-text">
                   Drop images here or <span>click to browse</span>
                 </p>
-                <p className="tr-dropzone-hint">
+                <p className="tr-drop-hint">
                   {3 - attachments.length} slot{3 - attachments.length !== 1 ? "s" : ""} remaining · JPG, PNG, WEBP
                 </p>
               </div>
@@ -300,18 +444,15 @@ export default function TicketRaise() {
               <div className="tr-previews">
                 {attachments.map((att, i) => (
                   <div key={i} className="tr-preview-item">
-                    <img src={att.preview} alt={att.name} className="tr-preview-img" />
-                    <div className="tr-preview-meta">
-                      <span className="tr-preview-name">{att.name}</span>
-                    </div>
+                    <img src={att.preview} alt={att.name} />
                     <button
                       type="button"
                       className="tr-preview-remove"
                       onClick={() => removeAttachment(i)}
-                      aria-label="Remove attachment"
                     >
                       <FiX />
                     </button>
+                    <p className="tr-preview-name">{att.name}</p>
                   </div>
                 ))}
               </div>
@@ -327,21 +468,31 @@ export default function TicketRaise() {
 
           {/* Actions */}
           <div className="tr-actions">
-            <button type="button" className="tr-btn-secondary" onClick={() => window.history.back()}>
+            <button type="button" className="tr-btn-ghost" onClick={() => window.history.back()}>
               Cancel
             </button>
             <button
               type="submit"
-              className={`tr-btn-primary ${submitting ? "tr-btn-loading" : ""}`}
+              className="tr-btn-primary"
               disabled={submitting}
             >
-              {submitting ? <span className="tr-spinner" /> : <FiSend />}
-              {submitting ? "Submitting…" : "Submit Ticket"}
+              {submitting
+                ? <><span className="tr-spinner" /> Submitting…</>
+                : <><FiSend /> Submit Ticket</>
+              }
             </button>
           </div>
 
         </form>
       </main>
     </div>
+  );
+}
+
+function FieldError({ msg }) {
+  return (
+    <span className="tr-field-error">
+      <FiAlertCircle size={12} /> {msg}
+    </span>
   );
 }

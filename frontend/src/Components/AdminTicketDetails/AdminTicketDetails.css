@@ -259,36 +259,92 @@
 }
 .atdd-attach-thumb:hover .atdd-attach-overlay { opacity: 1; }
 
-/* ── Status list ── */
-.atdd-status-list { display: flex; flex-direction: column; gap: 0.4rem; }
-.atdd-status-btn {
-  display: flex; align-items: center; gap: 0.55rem;
-  background: var(--bg-subtle);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  font-family: var(--font-main);
-  font-size: 0.83rem; font-weight: 500;
-  padding: 0.6rem 0.9rem; cursor: pointer;
-  transition: all 0.18s; text-align: left;
+/* ── Current Status Display (Locked) ── */
+.atdd-current-status-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
-.atdd-status-btn:not(:disabled):hover {
-  background: #fff;
-  border-color: #c7d2e0;
-  color: var(--text-primary);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+
+.atdd-status-card-locked {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.4rem;
+  background: var(--status-bg, var(--bg-subtle));
+  border: 2px solid var(--status-border, var(--border));
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
-.atdd-status-btn:disabled { cursor: default; }
-.atdd-status-btn-active {
-  background: var(--sb-bg, #eff6ff) !important;
-  border-color: var(--sb-border, #bfdbfe) !important;
-  color: var(--sb-color, #2563eb) !important;
+
+.atdd-status-card-locked::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--status-color, var(--accent));
+}
+
+.atdd-status-icon-large {
+  font-size: 2rem;
+  color: var(--status-color, var(--accent));
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.atdd-status-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.atdd-status-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.atdd-status-value {
+  font-size: 1.1rem;
   font-weight: 700;
+  color: var(--status-color, var(--text-primary));
+  letter-spacing: -0.01em;
 }
-.atdd-active-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: currentColor; margin-left: auto;
-  flex-shrink: 0; opacity: 0.75;
+
+.atdd-lock-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 50%;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.atdd-status-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.atdd-status-note svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 /* ── Info list ── */
@@ -454,4 +510,13 @@
 @media (max-width: 600px) {
   .atdd-hero-title { font-size: 1.2rem; }
   .atdd-layout { gap: 1rem; }
+  .atdd-status-card-locked {
+    padding: 1rem 1.1rem;
+  }
+  .atdd-status-icon-large {
+    font-size: 1.5rem;
+  }
+  .atdd-status-value {
+    font-size: 1rem;
+  }
 }

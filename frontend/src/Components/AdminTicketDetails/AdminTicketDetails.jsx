@@ -119,22 +119,6 @@ export default function AdminTicketDetails() {
     setTimeout(() => setToast(null), 3200);
   };
 
-  // ── Quick status change ──────────────────────────────────
-  const handleStatusChange = async (newStatus) => {
-    try {
-      const res = await fetch(
-        `${BASE_URL}/Ticket/updateStatus/${id}?status=${newStatus}`,
-        { method: "PATCH" }
-      );
-      if (!res.ok) throw new Error("Failed to update status");
-      const updated = await res.json();
-      setTicket(updated);
-      showToast(`Status updated to ${STATUS_META[newStatus]?.label}`);
-    } catch (e) {
-      showToast(e.message, "error");
-    }
-  };
-
   // ── Loading / error states ───────────────────────────────
   if (loading) return (
     <div className="atdd-root">
@@ -294,34 +278,37 @@ export default function AdminTicketDetails() {
           {/* ── RIGHT: Sidebar ── */}
           <div className="atdd-col-side">
 
-            {/* Update Status */}
+            {/* Current Status - Read Only */}
             <section className="atdd-section atdd-card">
               <div className="atdd-section-header">
                 <FiShield className="atdd-section-icon" />
-                <h2 className="atdd-section-title">Update Status</h2>
+                <h2 className="atdd-section-title">Current Status</h2>
               </div>
-              <div className="atdd-status-list">
-                {ALL_STATUSES.map(s => {
-                  const meta   = STATUS_META[s];
-                  const active = ticket.status === s;
-                  return (
-                    <button
-                      key={s}
-                      className={`atdd-status-btn${active ? " atdd-status-btn-active" : ""}`}
-                      style={active ? {
-                        "--sb-color":  meta.color,
-                        "--sb-bg":     meta.bg,
-                        "--sb-border": meta.border,
-                      } : {}}
-                      onClick={() => !active && handleStatusChange(s)}
-                      disabled={active}
-                    >
-                      <meta.Icon />
-                      <span>{meta.label}</span>
-                      {active && <span className="atdd-active-dot" />}
-                    </button>
-                  );
-                })}
+              <div className="atdd-current-status-display">
+                <div
+                  className="atdd-status-card-locked"
+                  style={{
+                    "--status-color": sm.color,
+                    "--status-bg": sm.bg,
+                    "--status-border": sm.border,
+                  }}
+                >
+                  <sm.Icon className="atdd-status-icon-large" />
+                  <div className="atdd-status-info">
+                    <span className="atdd-status-label">Status</span>
+                    <span className="atdd-status-value">{sm.label}</span>
+                  </div>
+                  <div className="atdd-lock-indicator">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M5 7V5C5 3.34315 6.34315 2 8 2C9.65685 2 11 3.34315 11 5V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+                <p className="atdd-status-note">
+                  <FiAlertCircle size={14} />
+                  Status is locked and can only be changed by technicians
+                </p>
               </div>
             </section>
 

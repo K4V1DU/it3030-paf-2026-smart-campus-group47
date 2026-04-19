@@ -9,7 +9,20 @@ import styles from "./BookingReviews.module.css";
 import Navbar from "../NavBar/AdminNavBar/AdminNavbar";
 
 const BASE_URL    = "http://localhost:8080";
-const REVIEWED_BY = "admin@sliit.lk";
+
+// Get current logged user data from localStorage
+const getCurrentUser = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      return user;
+    } catch (e) {
+      console.error('Error parsing user from localStorage:', e);
+    }
+  }
+  return null;
+};
 
 const STATUS_META = {
   PENDING:   { label: "Pending",   cls: "pending",   Icon: FiClock       },
@@ -100,6 +113,12 @@ export default function BookingReviews() {
 
   const fetchBookings = () => {
     setLoading(true);
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      setError("User not logged in. Please log in again.");
+      setLoading(false);
+      return;
+    }
     fetch(`${BASE_URL}/Booking/getAllBookings`)
       .then(r => { if (!r.ok) throw new Error("Failed to fetch bookings"); return r.json(); })
       .then(d => { setBookings(d); setLoading(false); })
@@ -182,7 +201,13 @@ export default function BookingReviews() {
   const submitApprove = async () => {
     setSubmitting(true);
     try {
-      const url = `${BASE_URL}/Booking/approve/${modalTarget.id}?reviewedBy=${encodeURIComponent(REVIEWED_BY)}`;
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        setResultMsg({ type: "error", text: "User not logged in." });
+        setSubmitting(false);
+        return;
+      }
+      const url = `${BASE_URL}/Booking/approve/${modalTarget.id}?reviewedBy=${encodeURIComponent(currentUser.email)}`;
       const res = await fetch(url, { method: "PUT" });
       if (!res.ok) throw new Error(await res.text());
       setResultMsg({ type: "success", text: "Booking approved successfully." });
@@ -200,7 +225,13 @@ export default function BookingReviews() {
     }
     setSubmitting(true);
     try {
-      const url = `${BASE_URL}/Booking/reject/${modalTarget.id}?reviewedBy=${encodeURIComponent(REVIEWED_BY)}&reason=${encodeURIComponent(rejectReason)}`;
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        setResultMsg({ type: "error", text: "User not logged in." });
+        setSubmitting(false);
+        return;
+      }
+      const url = `${BASE_URL}/Booking/reject/${modalTarget.id}?reviewedBy=${encodeURIComponent(currentUser.email)}&reason=${encodeURIComponent(rejectReason)}`;
       const res = await fetch(url, { method: "PUT" });
       if (!res.ok) throw new Error(await res.text());
       setResultMsg({ type: "success", text: "Booking rejected." });
