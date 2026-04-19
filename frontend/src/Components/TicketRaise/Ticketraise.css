@@ -695,6 +695,38 @@
   margin-bottom: 28px;
 }
 
+.tr-ticket-id-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--tr-blue-light);
+  border: 1.5px solid var(--tr-blue-border);
+  border-radius: var(--tr-radius-md);
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  animation: tr-fadeUp 0.5s ease both 0.2s;
+}
+
+.tr-ticket-id-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tr-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tr-ticket-id-value {
+  font-family: var(--tr-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--tr-blue);
+  background: #fff;
+  border: 1px solid var(--tr-blue-border);
+  border-radius: 6px;
+  padding: 4px 12px;
+}
+
 .tr-success-actions {
   display: flex;
   gap: 10px;

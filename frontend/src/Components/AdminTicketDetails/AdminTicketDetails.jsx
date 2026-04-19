@@ -24,6 +24,81 @@ import { RiAdminLine } from "react-icons/ri";
 
 const BASE_URL = "http://localhost:8080";
 
+// ── Auth helpers ─────────────────────────────────────────────
+const getToken = () => localStorage.getItem("token");
+
+const getCurrentUser = () => {
+  const userStr = localStorage.getItem("user");
+  if (userStr) {
+    try { return JSON.parse(userStr); } catch (e) { console.error("Error parsing user:", e); }
+  }
+  return null;
+};
+
+const authHeaders = () => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${getToken()}`,
+});
+
+// ── Notification helpers ─────────────────────────────────────
+async function sendNotification({ userId, title, message }) {
+  try {
+    await fetch(`${BASE_URL}/Notification/addNotification`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ userId, title, message, type: "GENERAL" }),
+    });
+  } catch (e) {
+    console.error("Failed to send notification:", e);
+  }
+}
+
+/**
+ * Notify the assigned technician + all admins when a ticket is assigned.
+ * @param {{ assignedUser, ticket, adminUser }} params
+ */
+async function sendAssignmentNotifications({ assignedUser, ticket, adminUser }) {
+  const notifs = [];
+
+  // 1. Notify the assigned technician
+  if (assignedUser?.id) {
+    notifs.push(
+      sendNotification({
+        userId:  assignedUser.id,
+        title:   "New Ticket Assigned to You",
+        message: `You have been assigned ticket #${ticket.id} — "${ticket.title}" by ${adminUser?.name || adminUser?.email || "an admin"}. Please review and take action.`,
+      })
+    );
+  }
+
+  // 2. Notify all admins (excluding the one who performed the action)
+  try {
+    const res = await fetch(`${BASE_URL}/User/getAllUsers`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error();
+    const users  = await res.json();
+    const admins = users.filter(
+      u => (u.role === "ADMIN" || u.userRole === "ADMIN") && u.id !== adminUser?.id
+    );
+    admins.forEach(admin => {
+      notifs.push(
+        sendNotification({
+          userId:  admin.id,
+          title:   "Ticket Assigned",
+          message: `Ticket #${ticket.id} — "${ticket.title}" has been assigned to ${assignedUser?.name || assignedUser?.email || "a technician"} by ${adminUser?.name || adminUser?.email || "an admin"}.`,
+        })
+      );
+    });
+  } catch (e) {
+    console.error("Failed to notify admins:", e);
+  }
+
+  await Promise.allSettled(notifs);
+}
+
+// ── Meta maps ────────────────────────────────────────────────
+
 const STATUS_META = {
   OPEN:        { label: "Open",        Icon: HiOutlineTicket,     color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
   IN_PROGRESS: { label: "In Progress", Icon: TbLoader2,            color: "#d97706", bg: "#fffbeb", border: "#fde68a" },
@@ -46,8 +121,6 @@ const CATEGORY_META = {
   FURNITURE: { Icon: FaChair,         label: "Furniture", gradient: "linear-gradient(135deg,#78350f,#d97706)" },
   OTHER:     { Icon: FaClipboardList, label: "Other",     gradient: "linear-gradient(135deg,#374151,#6b7280)" },
 };
-
-const ALL_STATUSES = Object.keys(STATUS_META);
 
 const fmt = (iso) => {
   if (!iso) return "—";
@@ -81,7 +154,9 @@ export default function AdminTicketDetails() {
   const fetchTicket = async () => {
     setLoading(true); setError(null);
     try {
-      const res  = await fetch(`${BASE_URL}/Ticket/getTicket/${id}`);
+      const res  = await fetch(`${BASE_URL}/Ticket/getTicket/${id}`, {
+        headers: authHeaders(),
+      });
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const data = await res.json();
       setTicket(data);
@@ -92,13 +167,14 @@ export default function AdminTicketDetails() {
     }
   };
 
-  // ── Fetch technicians from User API ──────────────────────
+  // ── Fetch technicians ────────────────────────────────────
   const fetchTechnicians = async () => {
     try {
-      const res  = await fetch(`${BASE_URL}/User/getAllUsers`);
+      const res  = await fetch(`${BASE_URL}/User/getAllUsers`, {
+        headers: authHeaders(),
+      });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      // Filter to TECHNICIAN role (adjust field name if needed)
       const techs = data.filter(
         u => u.role === "TECHNICIAN" || u.role === "Technician" || u.userRole === "TECHNICIAN"
       );
@@ -323,7 +399,7 @@ export default function AdminTicketDetails() {
                 technicians={technicians}
                 onAssigned={(updated) => {
                   setTicket(updated);
-                  showToast("Technician assigned successfully");
+                  showToast("Technician assigned & notified successfully");
                 }}
                 onError={(msg) => showToast(msg, "error")}
               />
@@ -373,25 +449,49 @@ function InfoRow({ label, value, mono, color, dim }) {
   );
 }
 
-// ── Assign Widget — technician dropdown ──────────────────────
+// ── Assign Widget ────────────────────────────────────────────
 function AssignWidget({ ticket, technicians, onAssigned, onError }) {
   const [selected, setSelected] = useState(ticket.assignedTo || "");
   const [saving,   setSaving]   = useState(false);
 
-  // Keep in sync if ticket prop changes (e.g. after status update)
   useEffect(() => { setSelected(ticket.assignedTo || ""); }, [ticket.assignedTo]);
 
   const handleAssign = async () => {
     if (!selected) return;
     setSaving(true);
     try {
+      // 1. Update the ticket with the new assignee
       const res = await fetch(`${BASE_URL}/Ticket/update/${ticket.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({ ...ticket, assignedTo: selected }),
       });
       if (!res.ok) throw new Error("Failed to assign technician");
       const updated = await res.json();
+
+      // 2. Send notifications (fire-and-forget — does not block success)
+      const currentUser = getCurrentUser();
+      const allUsersRes = await fetch(`${BASE_URL}/User/getAllUsers`, {
+        headers: authHeaders(),
+      });
+      let assignedUser = null;
+      if (allUsersRes.ok) {
+        const allUsers = await allUsersRes.json();
+        // Match by name, email, or full name
+        assignedUser = allUsers.find(
+          u =>
+            u.name === selected ||
+            u.email === selected ||
+            `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() === selected
+        );
+      }
+
+      sendAssignmentNotifications({
+        assignedUser,
+        ticket: updated,
+        adminUser: currentUser,
+      });
+
       onAssigned(updated);
     } catch (e) {
       onError(e.message);
