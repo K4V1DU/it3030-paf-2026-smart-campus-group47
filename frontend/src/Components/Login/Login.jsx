@@ -123,7 +123,7 @@ export default function Login() {
           <div className={styles.field}>
             <div className={styles.labelRow}>
               <label className={styles.label}>Password</label>
-              <a href="#" className={styles.forgot}>Forgot password?</a>
+              <Link to="/forgot-password" className={styles.forgot}>Forgot password?</Link>
             </div>
             <div className={styles.inputWrap}>
               <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
