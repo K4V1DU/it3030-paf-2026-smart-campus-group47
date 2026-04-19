@@ -8,7 +8,7 @@ import {
 import styles from "./BookingReviews.module.css";
 import Navbar from "../NavBar/AdminNavBar/AdminNavbar";
 
-const BASE_URL    = "http://localhost:8080";
+const BASE_URL = "http://localhost:8080";
 
 // Get current logged user data from localStorage
 const getCurrentUser = () => {
@@ -23,6 +23,9 @@ const getCurrentUser = () => {
   }
   return null;
 };
+
+// ── JWT helper ────────────────────────────────────────────────────────
+const getToken = () => localStorage.getItem('token');
 
 const STATUS_META = {
   PENDING:   { label: "Pending",   cls: "pending",   Icon: FiClock       },
@@ -80,8 +83,8 @@ function getBookingTimeStatus(bookingDate, startTime, endTime) {
   const now = new Date();
 
   const toDate = (dateStr, timeStr) => {
-    const [y, mo, d]  = dateStr.split("-").map(Number);
-    const [h, m]      = timeStr.split(":").map(Number);
+    const [y, mo, d] = dateStr.split("-").map(Number);
+    const [h, m]     = timeStr.split(":").map(Number);
     return new Date(y, mo - 1, d, h, m, 0);
   };
 
@@ -101,16 +104,17 @@ export default function BookingReviews() {
   const [search, setSearch]       = useState("");
 
   // Main approve/reject modal
-  const [modalTarget,   setModalTarget]   = useState(null);
-  const [modalMode,     setModalMode]     = useState(null); // "approve" | "reject"
-  const [rejectReason,  setRejectReason]  = useState("");
-  const [submitting,    setSubmitting]    = useState(false);
-  const [resultMsg,     setResultMsg]     = useState(null);
+  const [modalTarget,  setModalTarget]  = useState(null);
+  const [modalMode,    setModalMode]    = useState(null); // "approve" | "reject"
+  const [rejectReason, setRejectReason] = useState("");
+  const [submitting,   setSubmitting]   = useState(false);
+  const [resultMsg,    setResultMsg]    = useState(null);
 
   // Time-warning modal (shown before approve when slot is past/ongoing)
-  const [timeWarning,      setTimeWarning]      = useState(null); // null | "past" | "ongoing"
-  const [pendingApproval,  setPendingApproval]  = useState(null); // booking to approve after confirmation
+  const [timeWarning,     setTimeWarning]     = useState(null); // null | "past" | "ongoing"
+  const [pendingApproval, setPendingApproval] = useState(null); // booking to approve after confirmation
 
+  // ── 1. fetchBookings — GET with JWT ──────────────────────────────────
   const fetchBookings = () => {
     setLoading(true);
     const currentUser = getCurrentUser();
@@ -119,7 +123,11 @@ export default function BookingReviews() {
       setLoading(false);
       return;
     }
-    fetch(`${BASE_URL}/Booking/getAllBookings`)
+    fetch(`${BASE_URL}/Booking/getAllBookings`, {
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+      },
+    })
       .then(r => { if (!r.ok) throw new Error("Failed to fetch bookings"); return r.json(); })
       .then(d => { setBookings(d); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
@@ -156,11 +164,9 @@ export default function BookingReviews() {
     const timeStatus = getBookingTimeStatus(booking.bookingDate, booking.startTime, booking.endTime);
 
     if (timeStatus === "past" || timeStatus === "ongoing") {
-      // Show warning first — don't open the main modal yet
       setPendingApproval(booking);
       setTimeWarning(timeStatus);
     } else {
-      // Safe to open the normal approve modal directly
       setModalTarget(booking);
       setModalMode("approve");
       setRejectReason("");
@@ -182,7 +188,6 @@ export default function BookingReviews() {
     setResultMsg(null);
   };
 
-  // Called when admin clicks "Approve Anyway" in the warning popup
   const confirmApproveAnyway = () => {
     setTimeWarning(null);
     setModalTarget(pendingApproval);
@@ -197,7 +202,7 @@ export default function BookingReviews() {
     setPendingApproval(null);
   };
 
-  // ── Approve API call ──────────────────────────────────────────────
+  // ── 2. submitApprove — PUT with JWT ──────────────────────────────────
   const submitApprove = async () => {
     setSubmitting(true);
     try {
@@ -208,7 +213,12 @@ export default function BookingReviews() {
         return;
       }
       const url = `${BASE_URL}/Booking/approve/${modalTarget.id}?reviewedBy=${encodeURIComponent(currentUser.email)}`;
-      const res = await fetch(url, { method: "PUT" });
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
       if (!res.ok) throw new Error(await res.text());
       setResultMsg({ type: "success", text: "Booking approved successfully." });
       fetchBookings();
@@ -217,7 +227,7 @@ export default function BookingReviews() {
     } finally { setSubmitting(false); }
   };
 
-  // ── Reject API call ───────────────────────────────────────────────
+  // ── 3. submitReject — PUT with JWT ───────────────────────────────────
   const submitReject = async () => {
     if (!rejectReason.trim()) {
       setResultMsg({ type: "error", text: "A rejection reason is required." });
@@ -232,7 +242,12 @@ export default function BookingReviews() {
         return;
       }
       const url = `${BASE_URL}/Booking/reject/${modalTarget.id}?reviewedBy=${encodeURIComponent(currentUser.email)}&reason=${encodeURIComponent(rejectReason)}`;
-      const res = await fetch(url, { method: "PUT" });
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
       if (!res.ok) throw new Error(await res.text());
       setResultMsg({ type: "success", text: "Booking rejected." });
       fetchBookings();
@@ -364,14 +379,11 @@ export default function BookingReviews() {
 
       {/* ══════════════════════════════════════════
           TIME WARNING MODAL
-          Shown when the booking slot is already
-          past or currently ongoing
       ══════════════════════════════════════════ */}
       {timeWarning && pendingApproval && (
         <div className={styles.overlay} onClick={e => e.target === e.currentTarget && dismissWarning()}>
           <div className={`${styles.modal} ${styles.warningModal}`}>
 
-            {/* Icon + title */}
             <div className={styles.warningTop}>
               <div className={styles.warningIconWrap}>
                 <FiAlertCircle size={28} />
@@ -383,7 +395,6 @@ export default function BookingReviews() {
               </h3>
             </div>
 
-            {/* Detail strip */}
             <div className={styles.warningInfo}>
               <div className={styles.warningInfoRow}>
                 <span className={styles.warningInfoLabel}>Resource</span>
@@ -405,7 +416,6 @@ export default function BookingReviews() {
               </div>
             </div>
 
-            {/* Warning message */}
             <div className={styles.warningMsg}>
               <FiAlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
               <span>
@@ -416,7 +426,6 @@ export default function BookingReviews() {
               </span>
             </div>
 
-            {/* Actions */}
             <div className={styles.warningActions}>
               <button className={styles.ghostBtn} onClick={dismissWarning}>
                 Cancel
@@ -537,7 +546,6 @@ function ReviewCard({ booking: b, styles, onApprove, onReject }) {
   const isPending = b.status === "PENDING";
   const submittedDate = b.createdAt ? b.createdAt.split("T")[0] : null;
 
-  // Show a subtle "time passed" tag on pending cards whose slot has elapsed
   const timeStatus = isPending
     ? getBookingTimeStatus(b.bookingDate, b.startTime, b.endTime)
     : "future";
@@ -554,7 +562,6 @@ function ReviewCard({ booking: b, styles, onApprove, onReject }) {
             <div className={styles.nameBlock}>
               <div className={styles.nameLine}>
                 <span className={styles.resourceName}>{b.resourceName}</span>
-                {/* Past / ongoing tag */}
                 {timeStatus === "past" && (
                   <span className={styles.timePassedTag}>
                     <FiAlertCircle size={11} /> Time Passed
