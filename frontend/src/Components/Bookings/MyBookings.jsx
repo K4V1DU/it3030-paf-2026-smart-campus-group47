@@ -9,23 +9,70 @@ import Navbar from "../NavBar/UserNavBar/UserNavbar";
 
 const BASE_URL = "http://localhost:8080";
 
-// Get current logged user ID from localStorage
-const getCurrentUserId = () => {
-  const userStr = localStorage.getItem('user');
+// ── Auth helpers ──────────────────────────────────────────────────────
+const getToken = () => localStorage.getItem("token");
+
+const getCurrentUser = () => {
+  const userStr = localStorage.getItem("user");
   if (userStr) {
     try {
-      const user = JSON.parse(userStr);
-      return user.id;
+      return JSON.parse(userStr);
     } catch (e) {
-      console.error('Error parsing user from localStorage:', e);
+      console.error("Error parsing user from localStorage:", e);
     }
   }
   return null;
 };
 
-// ── JWT helper ────────────────────────────────────────────────────────
-const getToken = () => localStorage.getItem('token');
+const getCurrentUserId = () => getCurrentUser()?.id ?? null;
 
+// ── Send a single notification ────────────────────────────────────────
+async function sendNotification({ userId, title, message }) {
+  try {
+    await fetch(`${BASE_URL}/Notification/addNotification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({ userId, title, message, type: "GENERAL" }),
+    });
+  } catch (e) {
+    // Non-fatal — cancellation already succeeded
+    console.error("Failed to send notification:", e);
+  }
+}
+
+// ── Notify all admins about a cancellation ────────────────────────────
+async function notifyAdminsOfCancellation({ currentUser, booking, reason }) {
+  try {
+    const res = await fetch(`${BASE_URL}/User/getAllUsers`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    if (!res.ok) throw new Error("Could not fetch users");
+
+    const users  = await res.json();
+    const admins = users.filter(u => u.role === "ADMIN");
+
+    const timeStr = `${fmt12(booking.startTime)} – ${fmt12(booking.endTime)}`;
+    const reasonStr = reason?.trim() ? ` Reason: ${reason.trim()}` : "";
+
+    await Promise.all(
+      admins.map(admin =>
+        sendNotification({
+          userId:  admin.id,
+          title:   "Approved Booking Cancelled",
+          message: `${currentUser.name || currentUser.email} has cancelled their approved booking `
+                 + `for "${booking.resourceName}" on ${booking.bookingDate} from ${timeStr}.${reasonStr}`,
+        })
+      )
+    );
+  } catch (e) {
+    console.error("Failed to notify admins of cancellation:", e);
+  }
+}
+
+// ── Status / UI constants ─────────────────────────────────────────────
 const STATUS_META = {
   PENDING:   { label: "Pending",   cls: "pending",   Icon: FiClock       },
   APPROVED:  { label: "Approved",  cls: "approved",  Icon: FiCheckCircle },
@@ -63,6 +110,7 @@ const TAB_ACTIVE_SHADOW = {
   CANCELLED: "0 0 0 3px rgba(156,163,175,0.2),  0 6px 20px rgba(0,0,0,0.25)",
 };
 
+// ── Helpers ───────────────────────────────────────────────────────────
 function fmt12(t) {
   if (!t) return "—";
   const [hh, mm] = t.split(":").map(Number);
@@ -79,6 +127,7 @@ function isEndTimePassed(bookingDate, endTime) {
   return new Date() >= new Date(y, mo - 1, d, h, m, 0);
 }
 
+// ── Main Component ────────────────────────────────────────────────────
 export default function MyBookings() {
   const [bookings, setBookings]         = useState([]);
   const [loading, setLoading]           = useState(true);
@@ -90,7 +139,7 @@ export default function MyBookings() {
   const [cancelling, setCancelling]     = useState(false);
   const [cancelMsg, setCancelMsg]       = useState(null);
 
-  // ── 1. fetchBookings — GET with JWT ──────────────────────────────────
+  // ── Fetch bookings ────────────────────────────────────────────────
   const fetchBookings = () => {
     setLoading(true);
     const currentUserId = getCurrentUserId();
@@ -100,9 +149,7 @@ export default function MyBookings() {
       return;
     }
     fetch(`${BASE_URL}/Booking/getBookingsByUser/${currentUserId}`, {
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-      },
+      headers: { Authorization: `Bearer ${getToken()}` },
     })
       .then(r => { if (!r.ok) throw new Error("Failed to fetch bookings"); return r.json(); })
       .then(d => { setBookings(d); setLoading(false); })
@@ -130,18 +177,29 @@ export default function MyBookings() {
   const openCancel  = (booking) => { setCancelTarget(booking); setCancelReason(""); setCancelMsg(null); };
   const closeCancel = () => { setCancelTarget(null); setCancelReason(""); setCancelMsg(null); };
 
-  // ── 2. submitCancel — PUT with JWT ───────────────────────────────────
+  // ── Submit: Cancel approved booking ──────────────────────────────
   const submitCancel = async () => {
     setCancelling(true);
     try {
-      const url = `${BASE_URL}/Booking/cancel/${cancelTarget.id}${cancelReason ? `?reason=${encodeURIComponent(cancelReason)}` : ""}`;
+      const url = `${BASE_URL}/Booking/cancel/${cancelTarget.id}${
+        cancelReason ? `?reason=${encodeURIComponent(cancelReason)}` : ""
+      }`;
       const res = await fetch(url, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (!res.ok) throw new Error(await res.text());
+
+      // Fire-and-forget: notify all admins about the cancellation
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        notifyAdminsOfCancellation({
+          currentUser,
+          booking: cancelTarget,
+          reason:  cancelReason,
+        });
+      }
+
       setCancelMsg({ type: "success", text: "Booking cancelled successfully." });
       fetchBookings();
     } catch (e) {
@@ -149,15 +207,15 @@ export default function MyBookings() {
     } finally { setCancelling(false); }
   };
 
-  // ── 3. submitDelete — DELETE with JWT ───────────────────────────────
+  // ── Submit: Delete pending booking ────────────────────────────────
+  // Pending bookings are simply removed — no admin notification needed
+  // since they were never approved and admins haven't allocated the resource.
   const submitDelete = async () => {
     setCancelling(true);
     try {
       const res = await fetch(`${BASE_URL}/Booking/deleteBooking/${cancelTarget.id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (!res.ok) throw new Error(await res.text());
       setCancelMsg({ type: "success", text: "Booking removed successfully." });
@@ -167,6 +225,7 @@ export default function MyBookings() {
     } finally { setCancelling(false); }
   };
 
+  // ── Loading / error states ────────────────────────────────────────
   if (loading) return (
     <>
       <Navbar />
@@ -186,6 +245,7 @@ export default function MyBookings() {
     </>
   );
 
+  // ── Render ────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
       <Navbar />
@@ -307,6 +367,10 @@ export default function MyBookings() {
                     onChange={e => setCancelReason(e.target.value)}
                     rows={3}
                   />
+                  <p className={styles.cancelAdminNote}>
+                    <FiAlertTriangle size={13} style={{ flexShrink: 0 }} />
+                    Admins will be notified of this cancellation.
+                  </p>
                 </>
               )}
             </div>
