@@ -7,8 +7,8 @@ import {
 import styles from "./ResourceList.module.css";
 import Navbar from "../NavBar/UserNavBar/UserNavbar";
 
-const BASE_URL        = "http://localhost:8080";
-const DEFAULT_IMAGE   = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80";
+const BASE_URL      = "http://localhost:8080";
+const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80";
 
 // Get current logged user ID from localStorage
 const getCurrentUserId = () => {
@@ -23,7 +23,11 @@ const getCurrentUserId = () => {
   }
   return null;
 };
-const ITEM_H          = 48;
+
+// ── JWT helper ────────────────────────────────────────────────────────
+const getToken = () => localStorage.getItem('token');
+
+const ITEM_H = 48;
 
 const STATUS_META = {
   ACTIVE:         { cls: "available",   dot: "#22c55e" },
@@ -153,7 +157,6 @@ function TimePickerPopup({ value, onSave, onClose, minTime, maxTime, minTimeOffs
     const tStr = `${pad(h24)}:${pad(selM)}`;
     const tMin = toMinutes(tStr);
 
-    // ── Past-time guard (only when booking date is today) ──
     if (isToday) {
       const now    = new Date();
       const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -330,8 +333,13 @@ export default function ResourceList() {
   const [schedule,        setSchedule]        = useState([]);
   const [scheduleLoading, setScheduleLoading] = useState(false);
 
+  // ── 1. getAllResource — GET with JWT ──────────────────────────────
   useEffect(() => {
-    fetch(`${BASE_URL}/Resource/getAllResource`)
+    fetch(`${BASE_URL}/Resource/getAllResource`, {
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+      },
+    })
       .then(r => { if (!r.ok) throw new Error("Failed to fetch"); return r.json(); })
       .then(d => { setResources(d); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
@@ -376,10 +384,10 @@ export default function ResourceList() {
     });
   };
 
+  // ── 2. addBooking — POST with JWT ────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ── Submit-time past-time guard (catches clock ticking past while form was open) ──
     if (form.bookingDate === today) {
       const now    = new Date();
       const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -403,10 +411,7 @@ export default function ResourceList() {
     setSubmitting(true); setBookingMsg(null);
     const currentUserId = getCurrentUserId();
     if (!currentUserId) {
-      setBookingMsg({
-        type: "error",
-        text: "User not logged in. Please log in again.",
-      });
+      setBookingMsg({ type: "error", text: "User not logged in. Please log in again." });
       setSubmitting(false);
       return;
     }
@@ -422,7 +427,10 @@ export default function ResourceList() {
     try {
       const res = await fetch(`${BASE_URL}/Booking/addBooking`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -437,13 +445,17 @@ export default function ResourceList() {
     } finally { setSubmitting(false); }
   };
 
-  // ── Schedule modal handlers ────────────────────────────────────────
+  // ── 3. getBookingsByResource — GET with JWT ──────────────────────
   const openSchedule = async (r) => {
     setScheduleRes(r);
     setSchedule([]);
     setScheduleLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/Booking/getBookingsByResource/${r.id}`);
+      const res = await fetch(`${BASE_URL}/Booking/getBookingsByResource/${r.id}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
       if (!res.ok) throw new Error("Failed");
       setSchedule(await res.json());
     } catch { setSchedule([]); }

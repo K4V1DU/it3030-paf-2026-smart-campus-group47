@@ -12,6 +12,14 @@ const BASE_URL      = "http://localhost:8080";
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80";
 const ITEM_H        = 48;
 
+// ── JWT helper ────────────────────────────────────────────────────────
+const getToken = () => localStorage.getItem('token');
+
+const authHeaders = (extra = {}) => ({
+  Authorization: `Bearer ${getToken()}`,
+  ...extra,
+});
+
 const STATUS_META = {
   ACTIVE:         { cls: "available",   dot: "#22c55e", label: "Active"         },
   OUT_OF_SERVICE: { cls: "maintenance", dot: "#ef4444", label: "Out of Service" },
@@ -22,7 +30,7 @@ const SORT_OPTIONS = [
   { label: "Capacity ↑", value: "cap-asc"   },
   { label: "Capacity ↓", value: "cap-desc"  },
 ];
-const RESOURCE_TYPES = ["LAB", "EQUIPMENT","LECTURE_HALL" , "MEETING_ROOM"];
+const RESOURCE_TYPES = ["LAB", "EQUIPMENT", "LECTURE_HALL", "MEETING_ROOM"];
 
 const HOURS   = Array.from({ length: 12 }, (_, i) => i + 1);
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
@@ -253,16 +261,19 @@ function ResourceFormModal({ initial, onSave, onClose, saving, saveMsg }) {
     }
   };
 
-  // If editing an existing saved resource, call the dedicated remove endpoint.
+  // If editing an existing saved resource, call the dedicated remove endpoint with JWT.
   // For a new (unsaved) resource or a locally picked file, just clear the preview.
   const clearImage = async (e) => {
     e.stopPropagation();
 
     if (initial?.id && initial?.imageUrl && !imageFile) {
-      // Existing saved image — call the backend endpoint
+      // Existing saved image — call the backend endpoint with JWT
       setRemovingImg(true);
       try {
-        await fetch(`${BASE_URL}/Resource/removeImage/${initial.id}`, { method: "DELETE" });
+        await fetch(`${BASE_URL}/Resource/removeImage/${initial.id}`, {
+          method: "DELETE",
+          headers: authHeaders(),
+        });
       } catch (_) { /* non-fatal */ }
       setRemovingImg(false);
     }
@@ -480,7 +491,10 @@ function ScheduleModal({ resource, onClose }) {
   const STATUS_FILTERS = ["ALL", "APPROVED", "PENDING", "REJECTED", "CANCELLED"];
 
   useEffect(() => {
-    fetch(`${BASE_URL}/Booking/getBookingsByResource/${resource.id}`)
+    // GET bookings by resource — with JWT
+    fetch(`${BASE_URL}/Booking/getBookingsByResource/${resource.id}`, {
+      headers: authHeaders(),
+    })
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(setSchedule).catch(() => setSchedule([]))
       .finally(() => setScheduleLoading(false));
@@ -667,9 +681,12 @@ export default function ResourceManagement() {
     toastTimer.current = setTimeout(() => setToast(null), 3500);
   };
 
+  // ── GET all resources — with JWT ──────────────────────────────────
   const fetchResources = () => {
     setLoading(true); setError(null);
-    fetch(`${BASE_URL}/Resource/getAllResource`)
+    fetch(`${BASE_URL}/Resource/getAllResource`, {
+      headers: authHeaders(),
+    })
       .then(r => { if (!r.ok) throw new Error("Failed to fetch resources."); return r.json(); })
       .then(d => { setResources(d); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
@@ -703,6 +720,9 @@ export default function ResourceManagement() {
   const openAdd  = ()  => { setSaveMsg(null); setFormModal({ mode: "add",  data: null }); };
   const openEdit = (r) => { setSaveMsg(null); setFormModal({ mode: "edit", data: r    }); };
 
+  // ── POST / PUT resource — with JWT ────────────────────────────────
+  // Note: FormData requests must NOT manually set Content-Type;
+  // the browser sets it automatically with the correct boundary.
   const handleSave = async (formData, imageFile) => {
     setSaving(true); setSaveMsg(null);
     const isEdit = formModal.mode === "edit";
@@ -712,7 +732,11 @@ export default function ResourceManagement() {
     const method = isEdit ? "PUT" : "POST";
     try {
       const fd  = buildFormData(formData, imageFile);
-      const res = await fetch(url, { method, body: fd });
+      const res = await fetch(url, {
+        method,
+        headers: authHeaders(), // Content-Type omitted intentionally for FormData
+        body: fd,
+      });
       if (!res.ok) {
         let msg = `Failed to ${isEdit ? "update" : "create"} resource.`;
         try { const j = await res.json(); msg = j.message || msg; } catch (_) {}
@@ -732,6 +756,7 @@ export default function ResourceManagement() {
     }
   };
 
+  // ── DELETE resource — with JWT ────────────────────────────────────
   const handleDelete = (r) => {
     setConfirm({
       title: "Delete Resource",
@@ -740,7 +765,10 @@ export default function ResourceManagement() {
       onConfirm: async () => {
         setConfirm(null);
         try {
-          const res = await fetch(`${BASE_URL}/Resource/deleteResource/${r.id}`, { method: "DELETE" });
+          const res = await fetch(`${BASE_URL}/Resource/deleteResource/${r.id}`, {
+            method: "DELETE",
+            headers: authHeaders(),
+          });
           if (!res.ok) throw new Error("Delete failed.");
           setResources(prev => prev.filter(x => x.id !== r.id));
           showToast(`"${r.name}" deleted.`, "error");
@@ -749,6 +777,7 @@ export default function ResourceManagement() {
     });
   };
 
+  // ── PUT toggle status — with JWT ──────────────────────────────────
   const handleToggleStatus = (r) => {
     const next    = r.status === "ACTIVE" ? "OUT_OF_SERVICE" : "ACTIVE";
     const nextLbl = STATUS_META[next].label;
@@ -760,7 +789,11 @@ export default function ResourceManagement() {
         setConfirm(null);
         try {
           const fd  = buildFormData({ ...r, status: next }, null);
-          const res = await fetch(`${BASE_URL}/Resource/updateResource/${r.id}`, { method: "PUT", body: fd });
+          const res = await fetch(`${BASE_URL}/Resource/updateResource/${r.id}`, {
+            method: "PUT",
+            headers: authHeaders(), // Content-Type omitted intentionally for FormData
+            body: fd,
+          });
           if (!res.ok) throw new Error("Status update failed.");
           const updated = await res.json();
           setResources(prev => prev.map(x => x.id === updated.id ? updated : x));
