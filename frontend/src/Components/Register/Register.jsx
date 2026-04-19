@@ -11,7 +11,7 @@ export default function Register() {
     email: '',
     password: '',
     confirmPassword: '',
-   // role: 'USER',
+    role: 'USER',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -26,7 +26,11 @@ export default function Register() {
     if (!form.name.trim())              return 'Full name is required.';
     if (!form.email.trim())             return 'Email is required.';
     if (!/\S+@\S+\.\S+/.test(form.email)) return 'Enter a valid email address.';
-    if (form.password.length < 6)       return 'Password must be at least 6 characters.';
+    if (form.password.length < 6) return 'Password must be at least 6 characters.';
+    if (!/[A-Z]/.test(form.password)) return 'Password must contain at least one uppercase letter.';
+    if (!/[0-9]/.test(form.password)) return 'Password must contain at least one number.';
+    if (!/[^A-Za-z0-9]/.test(form.password)) return 'Password must contain at least one special character.';
+
     if (form.password !== form.confirmPassword) return 'Passwords do not match.';
     return null;
   };
@@ -59,13 +63,13 @@ export default function Register() {
         role:     data.role,
         imageUrl: data.imageUrl,
       }));
-      navigate('/home');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      navigate('/verify-otp', { state: { email: form.email } });
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
 
   const handleGoogleRegister = () => {
     window.location.href = `${BASE_URL}/oauth2/authorization/google`;
@@ -138,7 +142,7 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Role */}
+          {/* Role */} {/*
           <div className={styles.field}>
             <label className={styles.label}>Role</label>
             <div className={styles.inputWrap}>
@@ -159,7 +163,7 @@ export default function Register() {
                 <option value="MANAGER">Manager</option>
               </select>
             </div>
-          </div>
+          </div> */}
 
           {/* Password */}
           <div className={styles.field}>

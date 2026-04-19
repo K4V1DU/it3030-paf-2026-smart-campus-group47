@@ -1,6 +1,7 @@
 package com.sliit.smartcampus.config;
 
 import com.sliit.smartcampus.security.JwtAuthFilter;
+import com.sliit.smartcampus.security.OAuth2SuccessHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,23 +26,29 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthFilter jwtAuthFilter;
 
+    @Autowired
+    private OAuth2SuccessHandler oAuth2SuccessHandler;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm ->
-                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/Auth/**").permitAll()
-                        .requestMatchers("/User/**").permitAll()
-                        .requestMatchers("/Resource/**").permitAll()
-                        .requestMatchers("/Booking/**").permitAll()
-                        .requestMatchers("/Ticket/**").permitAll()
-                        .requestMatchers("/Notification/**").permitAll()
-                        // Everything else requires a valid JWT
+                        .requestMatchers(
+                                "/Auth/**",
+                                "/User/image/**",
+                                "/Resource/**",
+                                "/oauth2/**",
+                                "/login/oauth2/**",
+                                "/login/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2SuccessHandler)
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
