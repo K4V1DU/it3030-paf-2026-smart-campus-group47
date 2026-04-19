@@ -10,23 +10,39 @@ import Navbar from "../NavBar/AdminNavBar/AdminNavbar";
 
 const BASE_URL = "http://localhost:8080";
 
-// Get current logged user data from localStorage
+// ── Auth helpers ──────────────────────────────────────────────────────
+const getToken = () => localStorage.getItem("token");
+
 const getCurrentUser = () => {
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem("user");
   if (userStr) {
     try {
-      const user = JSON.parse(userStr);
-      return user;
+      return JSON.parse(userStr);
     } catch (e) {
-      console.error('Error parsing user from localStorage:', e);
+      console.error("Error parsing user from localStorage:", e);
     }
   }
   return null;
 };
 
-// ── JWT helper ────────────────────────────────────────────────────────
-const getToken = () => localStorage.getItem('token');
+// ── Send a single notification ────────────────────────────────────────
+async function sendNotification({ userId, title, message }) {
+  try {
+    await fetch(`${BASE_URL}/Notification/addNotification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({ userId, title, message, type: "GENERAL" }),
+    });
+  } catch (e) {
+    // Non-fatal — action already succeeded
+    console.error("Failed to send notification:", e);
+  }
+}
 
+// ── Status / UI constants ─────────────────────────────────────────────
 const STATUS_META = {
   PENDING:   { label: "Pending",   cls: "pending",   Icon: FiClock       },
   APPROVED:  { label: "Approved",  cls: "approved",  Icon: FiCheckCircle },
@@ -64,6 +80,7 @@ const TAB_ACTIVE_SHADOW = {
   CANCELLED: "0 0 0 3px rgba(156,163,175,0.2),  0 6px 20px rgba(0,0,0,0.25)",
 };
 
+// ── Helpers ───────────────────────────────────────────────────────────
 function fmt12(t) {
   if (!t) return "—";
   const [hh, mm] = t.split(":").map(Number);
@@ -74,8 +91,8 @@ function fmt12(t) {
 
 /**
  * Returns one of:
- *   "future"  — booking hasn't started yet (safe to approve normally)
- *   "ongoing" — booking has started but not ended (currently in progress)
+ *   "future"  — booking hasn't started yet
+ *   "ongoing" — booking has started but not ended
  *   "past"    — booking end time has already passed
  */
 function getBookingTimeStatus(bookingDate, startTime, endTime) {
@@ -96,6 +113,7 @@ function getBookingTimeStatus(bookingDate, startTime, endTime) {
   return "future";
 }
 
+// ── Main Component ────────────────────────────────────────────────────
 export default function BookingReviews() {
   const [bookings, setBookings]   = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -112,9 +130,9 @@ export default function BookingReviews() {
 
   // Time-warning modal (shown before approve when slot is past/ongoing)
   const [timeWarning,     setTimeWarning]     = useState(null); // null | "past" | "ongoing"
-  const [pendingApproval, setPendingApproval] = useState(null); // booking to approve after confirmation
+  const [pendingApproval, setPendingApproval] = useState(null);
 
-  // ── 1. fetchBookings — GET with JWT ──────────────────────────────────
+  // ── Fetch bookings ────────────────────────────────────────────────
   const fetchBookings = () => {
     setLoading(true);
     const currentUser = getCurrentUser();
@@ -124,9 +142,7 @@ export default function BookingReviews() {
       return;
     }
     fetch(`${BASE_URL}/Booking/getAllBookings`, {
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-      },
+      headers: { Authorization: `Bearer ${getToken()}` },
     })
       .then(r => { if (!r.ok) throw new Error("Failed to fetch bookings"); return r.json(); })
       .then(d => { setBookings(d); setLoading(false); })
@@ -162,7 +178,6 @@ export default function BookingReviews() {
   // ── Modal helpers ─────────────────────────────────────────────────
   const openApprove = (booking) => {
     const timeStatus = getBookingTimeStatus(booking.bookingDate, booking.startTime, booking.endTime);
-
     if (timeStatus === "past" || timeStatus === "ongoing") {
       setPendingApproval(booking);
       setTimeWarning(timeStatus);
@@ -202,7 +217,7 @@ export default function BookingReviews() {
     setPendingApproval(null);
   };
 
-  // ── 2. submitApprove — PUT with JWT ──────────────────────────────────
+  // ── Submit: Approve ───────────────────────────────────────────────
   const submitApprove = async () => {
     setSubmitting(true);
     try {
@@ -212,14 +227,25 @@ export default function BookingReviews() {
         setSubmitting(false);
         return;
       }
+
       const url = `${BASE_URL}/Booking/approve/${modalTarget.id}?reviewedBy=${encodeURIComponent(currentUser.email)}`;
       const res = await fetch(url, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (!res.ok) throw new Error(await res.text());
+
+      // Fire-and-forget: notify the booking owner
+      if (modalTarget.userId) {
+        sendNotification({
+          userId:  modalTarget.userId,
+          title:   "Booking Approved ✓",
+          message: `Your booking for "${modalTarget.resourceName}" on ${modalTarget.bookingDate} `
+                 + `from ${fmt12(modalTarget.startTime)} – ${fmt12(modalTarget.endTime)} `
+                 + `has been approved. You're all set!`,
+        });
+      }
+
       setResultMsg({ type: "success", text: "Booking approved successfully." });
       fetchBookings();
     } catch (e) {
@@ -227,7 +253,7 @@ export default function BookingReviews() {
     } finally { setSubmitting(false); }
   };
 
-  // ── 3. submitReject — PUT with JWT ───────────────────────────────────
+  // ── Submit: Reject ────────────────────────────────────────────────
   const submitReject = async () => {
     if (!rejectReason.trim()) {
       setResultMsg({ type: "error", text: "A rejection reason is required." });
@@ -241,14 +267,27 @@ export default function BookingReviews() {
         setSubmitting(false);
         return;
       }
-      const url = `${BASE_URL}/Booking/reject/${modalTarget.id}?reviewedBy=${encodeURIComponent(currentUser.email)}&reason=${encodeURIComponent(rejectReason)}`;
+
+      const url = `${BASE_URL}/Booking/reject/${modalTarget.id}`
+                + `?reviewedBy=${encodeURIComponent(currentUser.email)}`
+                + `&reason=${encodeURIComponent(rejectReason)}`;
       const res = await fetch(url, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (!res.ok) throw new Error(await res.text());
+
+      // Fire-and-forget: notify the booking owner
+      if (modalTarget.userId) {
+        sendNotification({
+          userId:  modalTarget.userId,
+          title:   "Booking Rejected",
+          message: `Your booking for "${modalTarget.resourceName}" on ${modalTarget.bookingDate} `
+                 + `from ${fmt12(modalTarget.startTime)} – ${fmt12(modalTarget.endTime)} `
+                 + `has been rejected. Reason: ${rejectReason}`,
+        });
+      }
+
       setResultMsg({ type: "success", text: "Booking rejected." });
       fetchBookings();
     } catch (e) {
@@ -256,7 +295,7 @@ export default function BookingReviews() {
     } finally { setSubmitting(false); }
   };
 
-  // ── Render ────────────────────────────────────────────────────────
+  // ── Loading / error states ────────────────────────────────────────
   if (loading) return (
     <>
       <Navbar />
@@ -276,6 +315,7 @@ export default function BookingReviews() {
     </>
   );
 
+  // ── Render ────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
       <Navbar />
@@ -512,6 +552,7 @@ export default function BookingReviews() {
                   The user will be notified that their booking has been approved.
                 </p>
               )}
+
             </div>
 
             <div className={styles.modalActions}>
@@ -536,6 +577,7 @@ export default function BookingReviews() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

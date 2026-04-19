@@ -8,9 +8,18 @@ import {
 import styles from "./ResourceManagement.module.css";
 import Navbar from "../NavBar/AdminNavBar/AdminNavbar";
 
-const BASE_URL      = "http://localhost:8080";
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80";
-const ITEM_H        = 48;
+const BASE_URL = "http://localhost:8080";
+
+// ── Type-based default images ─────────────────────────────────────────
+const DEFAULT_IMAGES = {
+  LAB:          "/images/lab.jpg",
+  EQUIPMENT:    "/images/eq.jpg",
+  LECTURE_HALL: "/images/lechall.jpg",
+  MEETING_ROOM: "/images/meeting.jpg",
+};
+const DEFAULT_IMAGE_FALLBACK = "/images/lab.jpg";
+
+const ITEM_H = 48;
 
 // ── JWT helper ────────────────────────────────────────────────────────
 const getToken = () => localStorage.getItem('token');
@@ -42,7 +51,18 @@ function friendlyStatus(s) {
   if (s === "OUT_OF_SERVICE") return "Out of Service";
   return s;
 }
-function getImage(r)         { return r.imageUrl ? `${BASE_URL}/Resource/image/${r.id}` : DEFAULT_IMAGE; }
+
+// ── Returns the resource image URL, falling back to a type-specific default ──
+function getImage(r) {
+  if (r.imageUrl) return `${BASE_URL}/Resource/image/${r.id}`;
+  return DEFAULT_IMAGES[r.type] ?? DEFAULT_IMAGE_FALLBACK;
+}
+
+// ── Returns the default image for a given resource type (used in onError handlers) ──
+function getDefaultImage(type) {
+  return DEFAULT_IMAGES[type] ?? DEFAULT_IMAGE_FALLBACK;
+}
+
 function capacityLabel(type) { return type === "EQUIPMENT" ? "quantity" : "seats"; }
 function pad(n)              { return String(n).padStart(2, "0"); }
 function toMinutes(t)        { if (!t) return null; const [h, m] = t.split(":").map(Number); return h * 60 + m; }
@@ -261,13 +281,9 @@ function ResourceFormModal({ initial, onSave, onClose, saving, saveMsg }) {
     }
   };
 
-  // If editing an existing saved resource, call the dedicated remove endpoint with JWT.
-  // For a new (unsaved) resource or a locally picked file, just clear the preview.
   const clearImage = async (e) => {
     e.stopPropagation();
-
     if (initial?.id && initial?.imageUrl && !imageFile) {
-      // Existing saved image — call the backend endpoint with JWT
       setRemovingImg(true);
       try {
         await fetch(`${BASE_URL}/Resource/removeImage/${initial.id}`, {
@@ -277,7 +293,6 @@ function ResourceFormModal({ initial, onSave, onClose, saving, saveMsg }) {
       } catch (_) { /* non-fatal */ }
       setRemovingImg(false);
     }
-
     setImageFile(null);
     setImagePreview(null);
     if (fileRef.current) fileRef.current.value = "";
@@ -491,7 +506,6 @@ function ScheduleModal({ resource, onClose }) {
   const STATUS_FILTERS = ["ALL", "APPROVED", "PENDING", "REJECTED", "CANCELLED"];
 
   useEffect(() => {
-    // GET bookings by resource — with JWT
     fetch(`${BASE_URL}/Booking/getBookingsByResource/${resource.id}`, {
       headers: authHeaders(),
     })
@@ -514,8 +528,12 @@ function ScheduleModal({ resource, onClose }) {
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <div className={styles.modalHeaderLeft}>
-            <img src={getImage(resource)} alt={resource.name} className={styles.modalThumb}
-              onError={e => { e.target.src = DEFAULT_IMAGE; }} />
+            <img
+              src={getImage(resource)}
+              alt={resource.name}
+              className={styles.modalThumb}
+              onError={e => { e.target.src = getDefaultImage(resource.type); }}
+            />
             <div>
               <p className={styles.modalTypeBadge}>{friendlyType(resource.type)}</p>
               <h2 className={styles.modalTitle}>{resource.name}</h2>
@@ -581,7 +599,12 @@ function AdminGridCard({ r, styles, onEdit, onDelete, onToggleStatus, onSchedule
   return (
     <div className={`${styles.card} ${isOos ? styles.cardOos : ""}`}>
       <div className={styles.cardImg}>
-        <img src={getImage(r)} alt={r.name} loading="lazy" onError={e => { e.target.src = DEFAULT_IMAGE; }} />
+        <img
+          src={getImage(r)}
+          alt={r.name}
+          loading="lazy"
+          onError={e => { e.target.src = getDefaultImage(r.type); }}
+        />
         <span className={`${styles.badge} ${styles[smeta.cls]}`}>
           <span className={styles.dot} style={{ background: smeta.dot }} />{smeta.label}
         </span>
@@ -601,7 +624,7 @@ function AdminGridCard({ r, styles, onEdit, onDelete, onToggleStatus, onSchedule
           <Clock size={13} />{displayTime(r.availableFrom)} – {displayTime(r.availableTo)}
         </div>
         <div className={styles.adminBtnRow}>
-          <button className={styles.iconBtn}       title="View Bookings"               onClick={onSchedule}><CalendarDays size={14} /></button>
+          <button className={styles.iconBtn}       title="View Bookings"                          onClick={onSchedule}><CalendarDays size={14} /></button>
           <button className={styles.iconBtn}       title={isOos ? "Set Active" : "Set Out of Service"} onClick={onToggleStatus}>
             {isOos ? <ToggleLeft size={14} /> : <ToggleRight size={14} />}
           </button>
@@ -619,8 +642,13 @@ function AdminListCard({ r, styles, onEdit, onDelete, onToggleStatus, onSchedule
   const isOos = r.status === "OUT_OF_SERVICE";
   return (
     <div className={`${styles.listCard} ${isOos ? styles.listCardOos : ""}`}>
-      <img src={getImage(r)} alt={r.name} className={styles.listImg} loading="lazy"
-        onError={e => { e.target.src = DEFAULT_IMAGE; }} />
+      <img
+        src={getImage(r)}
+        alt={r.name}
+        className={styles.listImg}
+        loading="lazy"
+        onError={e => { e.target.src = getDefaultImage(r.type); }}
+      />
       <div className={styles.listBody}>
         <div className={styles.listTop}>
           <div>
@@ -633,8 +661,8 @@ function AdminListCard({ r, styles, onEdit, onDelete, onToggleStatus, onSchedule
             <h2 className={styles.cardName}>{r.name}</h2>
           </div>
           <div className={styles.listAdminActions}>
-            <button className={styles.iconBtn}       title="Bookings"                            onClick={onSchedule}><CalendarDays size={14} /></button>
-            <button className={styles.iconBtn}       title={isOos ? "Activate" : "Deactivate"}   onClick={onToggleStatus}>
+            <button className={styles.iconBtn}       title="Bookings"                           onClick={onSchedule}><CalendarDays size={14} /></button>
+            <button className={styles.iconBtn}       title={isOos ? "Activate" : "Deactivate"}  onClick={onToggleStatus}>
               {isOos ? <ToggleLeft size={14} /> : <ToggleRight size={14} />}
             </button>
             <button className={styles.iconBtnEdit}   title="Edit"   onClick={onEdit}><Pencil size={14} /></button>
@@ -681,7 +709,7 @@ export default function ResourceManagement() {
     toastTimer.current = setTimeout(() => setToast(null), 3500);
   };
 
-  // ── GET all resources — with JWT ──────────────────────────────────
+  // ── GET all resources ─────────────────────────────────────────────
   const fetchResources = () => {
     setLoading(true); setError(null);
     fetch(`${BASE_URL}/Resource/getAllResource`, {
@@ -720,9 +748,7 @@ export default function ResourceManagement() {
   const openAdd  = ()  => { setSaveMsg(null); setFormModal({ mode: "add",  data: null }); };
   const openEdit = (r) => { setSaveMsg(null); setFormModal({ mode: "edit", data: r    }); };
 
-  // ── POST / PUT resource — with JWT ────────────────────────────────
-  // Note: FormData requests must NOT manually set Content-Type;
-  // the browser sets it automatically with the correct boundary.
+  // ── POST / PUT resource ───────────────────────────────────────────
   const handleSave = async (formData, imageFile) => {
     setSaving(true); setSaveMsg(null);
     const isEdit = formModal.mode === "edit";
@@ -734,7 +760,7 @@ export default function ResourceManagement() {
       const fd  = buildFormData(formData, imageFile);
       const res = await fetch(url, {
         method,
-        headers: authHeaders(), // Content-Type omitted intentionally for FormData
+        headers: authHeaders(),
         body: fd,
       });
       if (!res.ok) {
@@ -756,7 +782,7 @@ export default function ResourceManagement() {
     }
   };
 
-  // ── DELETE resource — with JWT ────────────────────────────────────
+  // ── DELETE resource ───────────────────────────────────────────────
   const handleDelete = (r) => {
     setConfirm({
       title: "Delete Resource",
@@ -777,7 +803,7 @@ export default function ResourceManagement() {
     });
   };
 
-  // ── PUT toggle status — with JWT ──────────────────────────────────
+  // ── PUT toggle status ─────────────────────────────────────────────
   const handleToggleStatus = (r) => {
     const next    = r.status === "ACTIVE" ? "OUT_OF_SERVICE" : "ACTIVE";
     const nextLbl = STATUS_META[next].label;
@@ -791,7 +817,7 @@ export default function ResourceManagement() {
           const fd  = buildFormData({ ...r, status: next }, null);
           const res = await fetch(`${BASE_URL}/Resource/updateResource/${r.id}`, {
             method: "PUT",
-            headers: authHeaders(), // Content-Type omitted intentionally for FormData
+            headers: authHeaders(),
             body: fd,
           });
           if (!res.ok) throw new Error("Status update failed.");
