@@ -7,7 +7,7 @@ import {
 import styles from "./MyBookings.module.css";
 import Navbar from "../NavBar/UserNavBar/UserNavbar";
 
-const BASE_URL        = "http://localhost:8080";
+const BASE_URL = "http://localhost:8080";
 
 // Get current logged user ID from localStorage
 const getCurrentUserId = () => {
@@ -22,6 +22,9 @@ const getCurrentUserId = () => {
   }
   return null;
 };
+
+// ── JWT helper ────────────────────────────────────────────────────────
+const getToken = () => localStorage.getItem('token');
 
 const STATUS_META = {
   PENDING:   { label: "Pending",   cls: "pending",   Icon: FiClock       },
@@ -87,6 +90,7 @@ export default function MyBookings() {
   const [cancelling, setCancelling]     = useState(false);
   const [cancelMsg, setCancelMsg]       = useState(null);
 
+  // ── 1. fetchBookings — GET with JWT ──────────────────────────────────
   const fetchBookings = () => {
     setLoading(true);
     const currentUserId = getCurrentUserId();
@@ -95,7 +99,11 @@ export default function MyBookings() {
       setLoading(false);
       return;
     }
-    fetch(`${BASE_URL}/Booking/getBookingsByUser/${currentUserId}`)
+    fetch(`${BASE_URL}/Booking/getBookingsByUser/${currentUserId}`, {
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+      },
+    })
       .then(r => { if (!r.ok) throw new Error("Failed to fetch bookings"); return r.json(); })
       .then(d => { setBookings(d); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
@@ -122,11 +130,17 @@ export default function MyBookings() {
   const openCancel  = (booking) => { setCancelTarget(booking); setCancelReason(""); setCancelMsg(null); };
   const closeCancel = () => { setCancelTarget(null); setCancelReason(""); setCancelMsg(null); };
 
+  // ── 2. submitCancel — PUT with JWT ───────────────────────────────────
   const submitCancel = async () => {
     setCancelling(true);
     try {
       const url = `${BASE_URL}/Booking/cancel/${cancelTarget.id}${cancelReason ? `?reason=${encodeURIComponent(cancelReason)}` : ""}`;
-      const res = await fetch(url, { method: "PUT" });
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
       if (!res.ok) throw new Error(await res.text());
       setCancelMsg({ type: "success", text: "Booking cancelled successfully." });
       fetchBookings();
@@ -135,10 +149,16 @@ export default function MyBookings() {
     } finally { setCancelling(false); }
   };
 
+  // ── 3. submitDelete — DELETE with JWT ───────────────────────────────
   const submitDelete = async () => {
     setCancelling(true);
     try {
-      const res = await fetch(`${BASE_URL}/Booking/deleteBooking/${cancelTarget.id}`, { method: "DELETE" });
+      const res = await fetch(`${BASE_URL}/Booking/deleteBooking/${cancelTarget.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
       if (!res.ok) throw new Error(await res.text());
       setCancelMsg({ type: "success", text: "Booking removed successfully." });
       fetchBookings();
