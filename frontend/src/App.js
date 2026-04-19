@@ -13,6 +13,7 @@ import TicketReview from './Components/TicketReview/TicketReview';
 import AdminTicketDashboard from './Components/AdminTicketDashboard/AdminTicketDashboard';
 import AdminTicketDetails from './Components/AdminTicketDetails/AdminTicketDetails';
 import OAuth2Callback from './Components/Auth/OAuth2Callback';
+import ForgotPassword from './Components/Auth/ForgotPassword';
 
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
         <Route path="/Admin/Tickets/:id"     element={<AdminTicketDetails />} />
         <Route path="/TicketReview"          element={<TicketReview />} />
         <Route path="/oauth2/callback"       element={<OAuth2Callback />} />
+        <Route path="/forgot-password"       element={<ForgotPassword />} />
       </Routes>
     </div>
   );
