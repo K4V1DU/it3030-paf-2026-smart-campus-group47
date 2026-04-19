@@ -59,13 +59,13 @@ export default function Register() {
         role:     data.role,
         imageUrl: data.imageUrl,
       }));
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      navigate('/verify-otp', { state: { email: form.email } });
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
 
   const handleGoogleRegister = () => {
     window.location.href = `${BASE_URL}/oauth2/authorization/google`;
