@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styles from './Login.module.css';
 
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = 'http://localhost:8081';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -71,7 +71,7 @@ export default function Login() {
 
   const handleGoogleLogin = () => {
       document.cookie = 'oauth2_auth_request=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+      window.location.href = 'http://localhost:8081/oauth2/authorization/google';
   };
 
   return (

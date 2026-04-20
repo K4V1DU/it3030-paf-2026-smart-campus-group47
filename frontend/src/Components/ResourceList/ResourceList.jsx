@@ -7,7 +7,7 @@ import {
 import styles from "./ResourceList.module.css";
 import Navbar from "../NavBar/UserNavBar/UserNavbar";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://localhost:8081";
 
 // ── Type-based default images ─────────────────────────────────────────
 const DEFAULT_IMAGES = {

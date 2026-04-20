@@ -19,7 +19,7 @@ import { HiOutlineTicket, HiOutlineCheckBadge } from "react-icons/hi2";
 import { TbLoader2 } from "react-icons/tb";
 
 // ── Constants ────────────────────────────────────────────────
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://localhost:8081";
 
 const STATUS_META = {
   OPEN:        { label: "Open",        color: "#f59e0b", bg: "#fffbeb", border: "#fde68a", Icon: HiOutlineTicket    },

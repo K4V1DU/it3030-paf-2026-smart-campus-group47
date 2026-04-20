@@ -34,7 +34,7 @@ public class UserController {
     }
 
     // GET PROFILE IMAGE
-    // React usage: <img src="http://localhost:8080/User/image/1" />
+    // React usage: <img src="http://localhost:8081/User/image/1" />
     @GetMapping("image/{id}")
     public ResponseEntity<byte[]> getUserImage(@PathVariable Long id) {
         return userService.getUserImage(id);

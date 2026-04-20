@@ -8,7 +8,7 @@ import {
 import styles from "./ResourceManagement.module.css";
 import Navbar from "../NavBar/AdminNavBar/AdminNavbar";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://localhost:8081";
 
 // ── Type-based default images ─────────────────────────────────────────
 const DEFAULT_IMAGES = {

@@ -21,18 +21,29 @@ public class AuthController {
     private AuthService authService;
 
     // REGISTER — sends OTP, saves user as INACTIVE
-    // POST http://localhost:8080/Auth/register
+    // POST http://localhost:8081/Auth/register
+
     @PostMapping("register")
+
     public ResponseEntity<Map<String, String>> register(
             @RequestBody RegisterRequestDTO request) {
+        Map.of("message", "ALERT [START] - Registration request received for email: {}");
+
+        // Initialising: Process registration and send OTP to the provided email
+        Map.of("message", "ALERT [INITIALISING] - Triggering authService.register() for email: {}");
+
         authService.register(request);
+
+        // Completed & End: Return success response confirming OTP was sent
+        Map.of("message", "ALERT [COMPLETED] - OTP successfully sent to email: {}");
+
         return ResponseEntity.ok(
                 Map.of("message", "OTP sent to " + request.getEmail())
         );
     }
 
     // VERIFY OTP — activates account, returns JWT
-    // POST http://localhost:8080/Auth/verify-otp
+    // POST http://localhost:8081/Auth/verify-otp
     // Body: { "email":"...", "otp":"123456" }
     @PostMapping("verify-otp")
     public ResponseEntity<AuthResponseDTO> verifyOtp(
@@ -43,7 +54,7 @@ public class AuthController {
     }
 
     // RESEND OTP
-    // POST http://localhost:8080/Auth/resend-otp
+    // POST http://localhost:8081/Auth/resend-otp
     @PostMapping("resend-otp")
     public ResponseEntity<Map<String, String>> resendOtp(
             @RequestBody Map<String, String> body) {
@@ -52,7 +63,7 @@ public class AuthController {
     }
 
     // LOGIN
-    // POST http://localhost:8080/Auth/login
+    // POST http://localhost:8081/Auth/login
     @PostMapping("login")
     public ResponseEntity<AuthResponseDTO> login(
             @RequestBody LoginRequestDTO request) {
@@ -60,7 +71,7 @@ public class AuthController {
     }
 
     // VALIDATE TOKEN
-    // GET http://localhost:8080/Auth/validate
+    // GET http://localhost:8081/Auth/validate
     @GetMapping("validate")
     public ResponseEntity<String> validateToken(
             @RequestHeader("Authorization") String token) {

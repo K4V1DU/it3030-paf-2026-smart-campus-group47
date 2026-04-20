@@ -7,7 +7,7 @@ import {
 import styles from "./MyBookings.module.css";
 import Navbar from "../NavBar/UserNavBar/UserNavbar";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://localhost:8081";
 
 // ── Auth helpers ──────────────────────────────────────────────────────
 const getToken = () => localStorage.getItem("token");

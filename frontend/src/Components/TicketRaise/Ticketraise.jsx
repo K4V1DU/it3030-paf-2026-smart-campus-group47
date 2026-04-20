@@ -11,7 +11,7 @@ import {
 } from "react-icons/fi";
 
 // ── Constants ──────────────────────────────────────────────────
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://localhost:8081";
 
 const CATEGORIES = ["EQUIPMENT", "FACILITY", "IT", "FURNITURE", "OTHER"];
 const PRIORITIES  = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
