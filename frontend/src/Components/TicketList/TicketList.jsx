@@ -10,7 +10,7 @@ import {
 } from "react-icons/fi";
 import { MdOutlineChair } from "react-icons/md";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://localhost:8081";
 
 // ── Read user from localStorage (same key Navbar uses) ───────────
 function getStoredUser() {

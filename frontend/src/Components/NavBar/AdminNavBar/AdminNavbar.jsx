@@ -4,7 +4,7 @@ import styles from "./AdminNavbar.module.css";
 
 const cls = (...classes) => classes.filter(Boolean).join(" ");
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://localhost:8081";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen]               = useState(false);

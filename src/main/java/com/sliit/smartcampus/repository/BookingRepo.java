@@ -19,7 +19,6 @@ public interface BookingRepo extends JpaRepository<Booking, Long> {
     List<Booking> findByResourceId(Long resourceId);
 
 
-
     // All bookings by status (Admin filter)
     List<Booking> findByStatus(BookingStatus status);
 

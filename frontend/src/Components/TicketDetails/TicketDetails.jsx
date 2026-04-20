@@ -76,7 +76,7 @@ export default function TicketDetails() {
     else setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:8080/Ticket/getTicket/${id}`);
+      const res = await fetch(`http://localhost:8081/Ticket/getTicket/${id}`);
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const data = await res.json();
       setTicket(data);
