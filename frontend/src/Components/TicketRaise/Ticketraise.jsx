@@ -31,15 +31,69 @@ const PRIORITY_META = {
   CRITICAL: { label: "Critical", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", Icon: FaBolt      },
 };
 
-// ── Helpers ────────────────────────────────────────────────────
+// ── Auth & Notification Helpers ────────────────────────────────────────────────────
+const getToken = () => localStorage.getItem("token");
+
+const getCurrentUser = () => {
+  const userStr = localStorage.getItem("user");
+  if (userStr) {
+    try { return JSON.parse(userStr); } catch (e) { console.error("Error parsing user:", e); }
+  }
+  return null;
+};
+
+/** Send a single notification */
+async function sendNotification({ userId, title, message }) {
+  try {
+    await fetch(`${BASE_URL}/Notification/addNotification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({ userId, title, message, type: "GENERAL" }),
+    });
+  } catch (e) {
+    console.error("Failed to send notification:", e);
+  }
+}
+
+/** Send ticket creation notifications to the user + all admins */
+async function sendTicketNotifications({ currentUser, ticketData, ticketId }) {
+  // 1. Notify the user who created the ticket
+  await sendNotification({
+    userId:  currentUser.id,
+    title:   "Ticket Created Successfully",
+    message: `Your ticket "${ticketData.title}" has been created successfully. Ticket ID: #${ticketId}. Our maintenance team will review it shortly.`,
+  });
+
+  // 2. Fetch all users, filter admins, notify each one
+  try {
+    const res = await fetch(`${BASE_URL}/User/getAllUsers`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    if (!res.ok) throw new Error("Could not fetch users");
+    const users  = await res.json();
+    const admins = users.filter(u => u.role === "ADMIN" && u.id !== currentUser.id);
+
+    await Promise.all(
+      admins.map(admin =>
+        sendNotification({
+          userId:  admin.id,
+          title:   "New Ticket Submitted",
+          message: `A new ${ticketData.priority} priority ticket has been submitted by ${currentUser.name || currentUser.email}: "${ticketData.title}" (Category: ${ticketData.category}, Location: ${ticketData.location}). Please review and assign.`,
+        })
+      )
+    );
+  } catch (e) {
+    console.error("Failed to notify admins:", e);
+  }
+}
+
+// ── Helpers ────────────────────────────────────────────────
 /** Read the user object that Navbar stores in localStorage. */
 function getStoredUser() {
-  try {
-    const raw = localStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  return getCurrentUser();
 }
 
 /** Build a display string for "Reported By" from the user object. */
@@ -72,6 +126,7 @@ export default function TicketRaise() {
   const [submitting,  setSubmitting]  = useState(false);
   const [submitted,   setSubmitted]   = useState(false);
   const [dragOver,    setDragOver]    = useState(false);
+  const [createdTicketId, setCreatedTicketId] = useState(null);
   const fileRef = useRef();
 
   // ── Form handlers ────────────────────────────────────────────
@@ -117,19 +172,48 @@ export default function TicketRaise() {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
+    // Check if user is logged in
+    if (!currentUser?.id) {
+      setErrors({ submit: "You must be logged in to submit a ticket. Please log in and try again." });
+      return;
+    }
+
     setSubmitting(true);
     const payload = { ...form, attachments: attachments.map(a => a.base64) };
 
     try {
       const res = await fetch(`${BASE_URL}/Ticket/create`, {
         method:  "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
         body:    JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Server error");
+
+      if (!res.ok) {
+        let msg = "Failed to submit ticket. Please try again.";
+        try {
+          const json = await res.json();
+          msg = json.message || msg;
+        } catch (_) {}
+        throw new Error(msg);
+      }
+
+      const createdTicket = await res.json();
+      const ticketId = createdTicket.id || "N/A";
+      setCreatedTicketId(ticketId);
       setSubmitted(true);
-    } catch {
-      setErrors({ submit: "Failed to submit ticket. Please try again." });
+
+      // Send notifications (fire-and-forget, doesn't block success)
+      sendTicketNotifications({
+        currentUser,
+        ticketData: form,
+        ticketId: ticketId,
+      });
+
+    } catch (err) {
+      setErrors({ submit: err.message || "Failed to submit ticket. Please try again." });
     } finally {
       setSubmitting(false);
     }
@@ -137,6 +221,7 @@ export default function TicketRaise() {
 
   const resetForm = () => {
     setSubmitted(false);
+    setCreatedTicketId(null);
     setForm(initForm(currentUser));
     setAttachments([]);
     setErrors({});
@@ -163,6 +248,12 @@ export default function TicketRaise() {
             </div>
             <h2>Ticket Submitted!</h2>
             <p>Your report has been received. Our maintenance team will review it shortly.</p>
+            {createdTicketId && (
+              <div className="tr-ticket-id-box">
+                <span className="tr-ticket-id-label">Ticket ID:</span>
+                <span className="tr-ticket-id-value">#{createdTicketId}</span>
+              </div>
+            )}
             <div className="tr-success-actions">
               <button className="tr-btn-secondary" onClick={() => window.history.back()}>
                 Back to Tickets

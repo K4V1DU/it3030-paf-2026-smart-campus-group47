@@ -26,6 +26,16 @@ import { RiAdminLine } from "react-icons/ri";
 
 const BASE_URL = "http://localhost:8081";
 
+// ── Auth helpers ───────────────────────────────────────────────
+const getToken = () => localStorage.getItem("token");
+
+const authHeaders = () => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${getToken()}`,
+});
+
+// ── Meta maps ──────────────────────────────────────────────────
+
 const STATUS_META = {
   OPEN:        { label: "Open",        Icon: HiOutlineTicket,    color: "#1d4ed8", bg: "#eff6ff",  border: "#bfdbfe", dot: "#3b82f6"  },
   IN_PROGRESS: { label: "In Progress", Icon: TbLoader2,           color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", dot: "#8b5cf6" },
@@ -84,14 +94,14 @@ const buildStats = (tickets) => {
   const unassigned = tickets.filter(t => !t.assignedTo).length;
 
   return [
-    { label: "Total",      value: total,      Icon: FiLayers,            filter: null,          active: false },
-    { label: "Open",       value: open,        Icon: HiOutlineTicket,     filter: "OPEN",        active: false },
-    { label: "In Progress",value: inProgress,  Icon: TbLoader2,           filter: "IN_PROGRESS", active: false },
-    { label: "Resolved",   value: resolved,    Icon: FiCheckCircle,       filter: "RESOLVED",    active: false },
-    { label: "Closed",     value: closed,      Icon: HiOutlineCheckBadge, filter: "CLOSED",      active: false },
-    { label: "Rejected",   value: rejected,    Icon: FiXCircle,           filter: "REJECTED",    active: false },
-    { label: "Critical",   value: critical,    Icon: MdOutlineFlashOn,    filter: "__CRITICAL__",active: false },
-    { label: "Unassigned", value: unassigned,  Icon: FiAlertTriangle,     filter: "__UNASSIGNED__",active: false },
+    { label: "Total",       value: total,       Icon: FiLayers,            filter: null             },
+    { label: "Open",        value: open,         Icon: HiOutlineTicket,     filter: "OPEN"           },
+    { label: "In Progress", value: inProgress,   Icon: TbLoader2,           filter: "IN_PROGRESS"    },
+    { label: "Resolved",    value: resolved,     Icon: FiCheckCircle,       filter: "RESOLVED"       },
+    { label: "Closed",      value: closed,       Icon: HiOutlineCheckBadge, filter: "CLOSED"         },
+    { label: "Rejected",    value: rejected,     Icon: FiXCircle,           filter: "REJECTED"       },
+    { label: "Critical",    value: critical,     Icon: MdOutlineFlashOn,    filter: "__CRITICAL__"   },
+    { label: "Unassigned",  value: unassigned,   Icon: FiAlertTriangle,     filter: "__UNASSIGNED__" },
   ];
 };
 
@@ -114,16 +124,24 @@ export default function AdminTicketDashboard() {
   const [view,           setView]           = useState("list");
   const [filtersOpen,    setFiltersOpen]    = useState(false);
 
+  // ── Fetch tickets with JWT ───────────────────────────────────
   const fetchTickets = async (silent = false) => {
     if (silent) setRefreshing(true);
     else        setLoading(true);
     setError(null);
     try {
       const res = await fetch(`${BASE_URL}/Ticket/getAllTickets`, {
-  headers: {
-    'Authorization': `Bearer ${localStorage.getItem('token')}`
-  }
-});
+        headers: authHeaders(),
+      });
+
+      // Handle unauthorized — redirect to login
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+        return;
+      }
+
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const data = await res.json();
       setTickets(data);
@@ -135,7 +153,14 @@ export default function AdminTicketDashboard() {
     }
   };
 
-  useEffect(() => { fetchTickets(); }, []);
+  useEffect(() => {
+    // Redirect immediately if no token present
+    if (!getToken()) {
+      navigate("/login");
+      return;
+    }
+    fetchTickets();
+  }, []);
 
   const stats = useMemo(() => buildStats(tickets), [tickets]);
 
@@ -176,11 +201,12 @@ export default function AdminTicketDashboard() {
   // Handle stat card click for quick filtering
   const handleStatClick = (stat) => {
     if (!stat.filter) { clearFilters(); return; }
-    if (stat.filter === "__CRITICAL__")  { setFilterPriority(p => p === "CRITICAL" ? "All" : "CRITICAL"); return; }
+    if (stat.filter === "__CRITICAL__")   { setFilterPriority(p => p === "CRITICAL"   ? "All" : "CRITICAL");   return; }
     if (stat.filter === "__UNASSIGNED__") { setFilterAssigned(p => p === "unassigned" ? "All" : "unassigned"); return; }
     setFilterStatus(s => s === stat.filter ? "All" : stat.filter);
   };
 
+  // ── Loading / error states ────────────────────────────────────
   if (loading) return (
     <div className="atd-page">
       <Navbar />
@@ -214,7 +240,7 @@ export default function AdminTicketDashboard() {
           <div className="atd-header-left">
             <span className="atd-eyebrow">ADMIN PANEL</span>
             <h1 className="atd-title">Ticket Dashboard</h1>
-            <p className="atd-subtitle">Review, manage and assign maintenance & support tickets.</p>
+            <p className="atd-subtitle">Review, manage and assign maintenance &amp; support tickets.</p>
 
             {/* Search */}
             <div className="atd-search-wrap">
@@ -265,11 +291,11 @@ export default function AdminTicketDashboard() {
           <FiFilter className="atd-controls-bar-icon" />
           {hasFilters ? (
             <span className="atd-active-filter-text">
-              {filterStatus !== "All" && <><strong>Status:</strong> {STATUS_META[filterStatus]?.label}</>}
+              {filterStatus   !== "All" && <><strong>Status:</strong> {STATUS_META[filterStatus]?.label}</>}
               {filterPriority !== "All" && <><strong>Priority:</strong> {PRIORITY_META[filterPriority]?.label}</>}
               {filterCategory !== "All" && <><strong>Category:</strong> {CATEGORY_META[filterCategory]?.label}</>}
               {filterAssigned !== "All" && <><strong>Assignment:</strong> {filterAssigned}</>}
-              {search && <><strong>Search:</strong> "{search}"</>}
+              {search && <><strong>Search:</strong> &ldquo;{search}&rdquo;</>}
             </span>
           ) : (
             <span className="atd-controls-bar-text">All tickets</span>
@@ -303,7 +329,11 @@ export default function AdminTicketDashboard() {
             </div>
 
             {/* Refresh */}
-            <button className={`atd-refresh-btn ${refreshing ? "atd-refreshing" : ""}`} onClick={() => fetchTickets(true)} title="Refresh">
+            <button
+              className={`atd-refresh-btn ${refreshing ? "atd-refreshing" : ""}`}
+              onClick={() => fetchTickets(true)}
+              title="Refresh"
+            >
               <FiRefreshCw />
             </button>
           </div>
@@ -313,6 +343,7 @@ export default function AdminTicketDashboard() {
         {filtersOpen && (
           <div className="atd-filter-drawer">
             <div className="atd-filter-grid">
+
               {/* Status */}
               <div className="atd-filter-group">
                 <label className="atd-filter-label">Status</label>
@@ -522,7 +553,12 @@ export default function AdminTicketDashboard() {
                   const pm  = PRIORITY_META[t.priority] || PRIORITY_META.LOW;
                   const cat = CATEGORY_META[t.category] || CATEGORY_META.OTHER;
                   return (
-                    <tr key={t.id} className="atd-tr" onClick={() => navigate(`/admin/tickets/${t.id}`)} style={{ animationDelay: `${idx * 0.025}s` }}>
+                    <tr
+                      key={t.id}
+                      className="atd-tr"
+                      onClick={() => navigate(`/admin/tickets/${t.id}`)}
+                      style={{ animationDelay: `${idx * 0.025}s` }}
+                    >
                       <td><span className="atd-id-chip">#{t.id}</span></td>
                       <td className="atd-td-title">{t.title}</td>
                       <td><span className="atd-cat-cell"><cat.Icon />{cat.label}</span></td>
@@ -546,7 +582,10 @@ export default function AdminTicketDashboard() {
                       </td>
                       <td className="atd-date-cell">{fmt(t.createdAt)}</td>
                       <td>
-                        <button className="atd-tbl-view-btn" onClick={e => { e.stopPropagation(); navigate(`/admin/tickets/${t.id}`); }}>
+                        <button
+                          className="atd-tbl-view-btn"
+                          onClick={e => { e.stopPropagation(); navigate(`/admin/tickets/${t.id}`); }}
+                        >
                           <FiEye />
                         </button>
                       </td>
