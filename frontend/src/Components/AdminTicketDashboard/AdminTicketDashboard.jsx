@@ -119,7 +119,11 @@ export default function AdminTicketDashboard() {
     else        setLoading(true);
     setError(null);
     try {
-      const res  = await fetch(`${BASE_URL}/Ticket/getAllTickets`);
+      const res = await fetch(`${BASE_URL}/Ticket/getAllTickets`, {
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('token')}`
+  }
+});
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const data = await res.json();
       setTickets(data);

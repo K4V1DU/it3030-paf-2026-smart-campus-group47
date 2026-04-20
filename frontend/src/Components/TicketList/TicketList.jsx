@@ -79,7 +79,11 @@ export default function TicketList() {
 
     const userId = currentUser.id;
 
-    fetch(`${BASE_URL}/Ticket/getByUser/${userId}`)
+    fetch(`${BASE_URL}/Ticket/getByUser/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
       .then(r => {
         if (!r.ok) throw new Error("fallback");
         return r.json();
@@ -90,8 +94,12 @@ export default function TicketList() {
       })
       .catch(() => {
         // Fallback: all tickets filtered by reportedBy containing user name or email
-        fetch(`${BASE_URL}/Ticket/getAllTickets`)
-          .then(r => { if (!r.ok) throw new Error("Failed to fetch tickets"); return r.json(); })
+        fetch(`${BASE_URL}/Ticket/getAllTickets`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        })
+            .then(r => { if (!r.ok) throw new Error("Failed to fetch tickets"); return r.json(); })
           .then(data => {
             const name  = (currentUser.name  || "").toLowerCase();
             const email = (currentUser.email || "").toLowerCase();
@@ -148,7 +156,12 @@ export default function TicketList() {
     setDeleting(true);
     setDeleteError(null);
     try {
-      const res = await fetch(`${BASE_URL}/Ticket/delete/${deleteTarget.id}`, { method: "DELETE" });
+      const res = await fetch(`${BASE_URL}/Ticket/delete/${deleteTarget.id}`, {
+        method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       if (!res.ok) throw new Error("Failed to delete. Please try again.");
       setTickets(prev => prev.filter(t => t.id !== deleteTarget.id));
       setDeleteTarget(null);
